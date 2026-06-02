@@ -1,8 +1,11 @@
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
 
+#Consolidate Root
+#[[redirects]]
+#  from = "/*"
+#  to = "/index.html"
+#  status = 200
+
+#Pub Not found
 [[redirects]]
 from = "/pubs/*"
 to = "/pubs/404.html"
