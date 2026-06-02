@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhosOnNext — Pool Night, Sorted</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & ROOT ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:          #09090C;
+  --surface:     #111318;
+  --surface-2:   #181C26;
+  --surface-3:   #1E2330;
+  --border:      rgba(255,255,255,0.06);
+  --border-hi:   rgba(255,255,255,0.11);
+
+  --gold:        #D4A441;
+  --gold-lt:     #EEC060;
+  --gold-dim:    rgba(212,164,65,0.10);
+  --gold-glow:   rgba(212,164,65,0.18);
+
+  --green:       #27B86A;
+  --green-dim:   rgba(39,184,106,0.08);
+  --green-felt:  #1A4731;
+
+  --text:        #EDE9E0;
+  --text-muted:  #6B7280;
+  --text-dim:    #353A48;
+
+  --r:    14px;
+  --r-sm: 9px;
+
+  font-family: 'Outfit', system-ui, sans-serif;
+  color-scheme: dark;
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ─── NOISE TEXTURE OVERLAY ────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+/* ─── NAV ──────────────────────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 56px;
+  background: rgba(9,9,12,0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 9px;
+  text-decoration: none;
+}
+.nav-icon { font-size: 20px; }
+.nav-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 2px;
+  color: var(--text);
+}
+.nav-cta {
+  background: var(--gold);
+  color: #0D0800;
+  font-weight: 700; font-size: 13px;
+  padding: 8px 18px;
+  border-radius: var(--r-sm);
+  border: none; cursor: pointer;
+  text-decoration: none;
+  transition: filter .15s, transform .12s;
+  letter-spacing: 0.2px;
+}
+.nav-cta:hover { filter: brightness(1.1); }
+.nav-cta:active { transform: scale(0.95); }
+
+/* ─── HERO ─────────────────────────────────────────────────── */
+.hero {
+  position: relative; z-index: 1;
+  min-height: 100svh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 100px 24px 80px;
+  overflow: hidden;
+}
+
+/* Felt table glow */
+.hero::before {
+  content: '';
+  position: absolute;
+  width: 700px; height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(26,71,49,0.35) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -55%);
+  pointer-events: none;
+}
+/* Gold accent glow */
+.hero::after {
+  content: '';
+  position: absolute;
+  width: 500px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(212,164,65,0.08) 0%, transparent 70%);
+  bottom: 10%; left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(212,164,65,0.2);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 28px;
+  animation: fadeUp .6s ease-out both;
+}
+.eyebrow-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.hero-heading {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(64px, 16vw, 130px);
+  line-height: 0.92;
+  letter-spacing: 1px;
+  color: var(--text);
+  margin-bottom: 12px;
+  animation: fadeUp .6s .1s ease-out both;
+}
+.hero-heading em {
+  font-style: normal;
+  color: var(--gold-lt);
+}
+
+.hero-sub {
+  font-size: clamp(15px, 2.5vw, 19px);
+  color: var(--text-muted);
+  font-weight: 400;
+  max-width: 480px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  animation: fadeUp .6s .2s ease-out both;
+}
+
+.hero-btns {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  animation: fadeUp .6s .3s ease-out both;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #B8892B, #D4A441, #EEC060);
+  color: #0D0800;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700; font-size: 15px;
+  padding: 14px 28px;
+  border-radius: var(--r-sm);
+  border: none; cursor: pointer;
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: filter .15s, transform .12s;
+  letter-spacing: 0.1px;
+}
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:active { transform: scale(0.96); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600; font-size: 15px;
+  padding: 14px 28px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-hi);
+  cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: color .15s, border-color .15s;
+}
+.btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+/* ─── MOCK APP PREVIEW ─────────────────────────────────────── */
+.hero-preview {
+  position: relative; z-index: 1;
+  margin-top: 64px;
+  width: 100%; max-width: 340px;
+  animation: fadeUp .7s .4s ease-out both;
+}
+.phone-frame {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 40px 80px rgba(0,0,0,0.6),
+    0 0 60px rgba(212,164,65,0.06);
+}
+.phone-bar {
+  height: 44px;
+  background: rgba(9,9,12,0.9);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+}
+.phone-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; letter-spacing: 1.5px;
+}
+.phone-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+.phone-body { padding: 14px; }
+.mock-match {
+  background: radial-gradient(ellipse 80% 55% at 50% -5%, rgba(20,75,42,0.22) 0%, transparent 70%), var(--surface-2);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.mock-match::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold) 40%, var(--gold-lt) 60%, transparent 100%);
+  opacity: 0.6;
+}
+.mock-streak {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 6px;
+  background: linear-gradient(90deg, transparent, rgba(212,164,65,0.08), transparent);
+  border-bottom: 1px solid rgba(212,164,65,0.1);
+  font-size: 11px; font-weight: 600; color: var(--gold);
+  margin: -16px -16px 14px;
+}
+.mock-player {
+  text-align: center; padding: 10px 6px;
+  border-radius: 8px; margin-bottom: 6px;
+}
+.mock-player.champ {
+  background: rgba(212,164,65,0.08);
+  border: 1px solid rgba(212,164,65,0.15);
+}
+.mock-player.chal {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+}
+.mock-role {
+  font-size: 8px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.mock-player.champ .mock-role { color: var(--gold); }
+.mock-player.chal  .mock-role { color: var(--text-muted); }
+.mock-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px; line-height: 1;
+}
+.mock-player.champ .mock-name { color: var(--gold-lt); }
+.mock-player.chal  .mock-name { color: var(--text); }
+.mock-vs {
+  text-align: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px; letter-spacing: 4px;
+  color: var(--text-dim); padding: 4px 0;
+}
+.mock-btns { display: flex; gap: 6px; margin-top: 12px; }
+.mock-btn {
+  flex: 1; padding: 11px 6px;
+  border-radius: 7px;
+  font-size: 11px; font-weight: 700; text-align: center;
+}
+.mock-btn.gold { background: linear-gradient(135deg, #B8892B, #EEC060); color: #0D0800; }
+.mock-btn.red  { background: linear-gradient(135deg, #A03333, #F07070); color: #fff; }
+
+.mock-queue {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px;
+}
+.mock-q-title {
+  font-size: 10px; font-weight: 600; color: var(--text-muted);
+  letter-spacing: 0.3px; margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.mock-q-badge {
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: 999px; font-size: 9px; font-weight: 700;
+  color: var(--text-muted); padding: 1px 7px;
+}
+.mock-q-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px;
+  background: var(--surface-3);
+  border-radius: 6px; margin-bottom: 4px;
+  font-size: 12px;
+}
+.mock-q-item:last-child { margin-bottom: 0; }
+.mock-q-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px; color: var(--text-dim); width: 14px;
+}
+.mock-q-num.next { color: var(--gold); }
+
+/* ─── SECTION BASE ─────────────────────────────────────────── */
+section {
+  position: relative; z-index: 1;
+  padding: 80px 24px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+.section-eyebrow {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 14px;
+}
+.section-heading {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(40px, 8vw, 68px);
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+.section-sub {
+  font-size: 16px; color: var(--text-muted);
+  line-height: 1.65; max-width: 520px;
+}
+
+/* ─── FEATURES ─────────────────────────────────────────────── */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 48px;
+}
+.feat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  transition: border-color .2s, transform .2s;
+  position: relative; overflow: hidden;
+}
+.feat-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,164,65,0.3), transparent);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.feat-card:hover {
+  border-color: var(--border-hi);
+  transform: translateY(-2px);
+}
+.feat-card:hover::before { opacity: 1; }
+
+.feat-icon {
+  font-size: 26px; margin-bottom: 14px;
+  display: block;
+}
+.feat-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 0.5px;
+  color: var(--text); margin-bottom: 8px;
+}
+.feat-desc {
+  font-size: 14px; color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ─── HOW IT WORKS ─────────────────────────────────────────── */
+.how-section {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.how-section-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+  margin-top: 52px;
+  position: relative;
+}
+.steps::before {
+  content: '';
+  position: absolute;
+  top: 26px; left: calc(16.6% + 12px); right: calc(16.6% + 12px);
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold-dim), rgba(212,164,65,0.2), var(--gold-dim));
+  display: none;
+}
+@media (min-width: 700px) { .steps::before { display: block; } }
+
+.step {
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center;
+  padding: 0 20px 0;
+}
+.step-num {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid rgba(212,164,65,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; color: var(--gold);
+  margin-bottom: 18px;
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+  box-shadow: 0 0 20px var(--gold-dim);
+}
+.step-title {
+  font-weight: 700; font-size: 15px;
+  color: var(--text); margin-bottom: 8px;
+}
+.step-desc {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ─── PRICING ──────────────────────────────────────────────── */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 48px;
+  max-width: 700px;
+}
+.price-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 28px 24px;
+  position: relative; overflow: hidden;
+}
+.price-card.featured {
+  background: linear-gradient(145deg, var(--surface-2), var(--surface));
+  border-color: rgba(212,164,65,0.25);
+}
+.price-card.featured::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--gold-lt), transparent);
+}
+.price-badge {
+  display: inline-block;
+  background: var(--gold-dim);
+  border: 1px solid rgba(212,164,65,0.2);
+  color: var(--gold);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 999px;
+  margin-bottom: 16px;
+}
+.price-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px; letter-spacing: 1px;
+  color: var(--text); margin-bottom: 6px;
+}
+.price-amount {
+  display: flex; align-items: flex-end; gap: 4px;
+  margin-bottom: 6px;
+}
+.price-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 52px; line-height: 1;
+  color: var(--gold-lt);
+}
+.price-period {
+  font-size: 13px; color: var(--text-muted);
+  padding-bottom: 8px; font-weight: 500;
+}
+.price-desc {
+  font-size: 13px; color: var(--text-muted);
+  margin-bottom: 20px; line-height: 1.5;
+}
+.price-feats {
+  list-style: none; display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 24px;
+}
+.price-feats li {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 13px; color: var(--text-muted);
+}
+.price-feats li::before {
+  content: '✓';
+  color: var(--green); font-weight: 700; font-size: 12px;
+  flex-shrink: 0;
+}
+.price-btn {
+  width: 100%; padding: 13px;
+  border-radius: var(--r-sm); border: none;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700; font-size: 14px;
+  cursor: pointer; text-decoration: none;
+  display: block; text-align: center;
+  transition: filter .15s, transform .12s;
+}
+.price-btn.gold {
+  background: linear-gradient(135deg, #B8892B, #D4A441, #EEC060);
+  color: #0D0800;
+}
+.price-btn.ghost {
+  background: transparent; color: var(--text-muted);
+  border: 1px solid var(--border-hi);
+}
+.price-btn:hover { filter: brightness(1.1); }
+.price-btn:active { transform: scale(0.97); }
+
+/* ─── SIGN UP SECTION ──────────────────────────────────────── */
+.signup-section {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.signup-inner {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+.signup-inner .section-heading { text-align: center; }
+.signup-inner .section-sub { text-align: center; margin: 0 auto 40px; }
+
+.signup-form {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.form-row { display: flex; gap: 12px; }
+@media (max-width: 500px) { .form-row { flex-direction: column; } }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.form-label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.form-input {
+  height: 50px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif; font-size: 15px;
+  padding: 0 14px; outline: none;
+  -webkit-appearance: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+.form-input::placeholder { color: var(--text-dim); }
+.form-input:focus { border-color: var(--gold); }
+
+.form-note {
+  font-size: 12px; color: var(--text-muted);
+  text-align: center; line-height: 1.5;
+}
+.form-note a { color: var(--gold); text-decoration: none; }
+
+.submit-btn {
+  height: 54px;
+  background: linear-gradient(135deg, #B8892B, #D4A441, #EEC060);
+  color: #0D0800;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700; font-size: 16px;
+  border: none; border-radius: var(--r-sm);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: filter .15s, transform .12s;
+  letter-spacing: 0.1px;
+}
+.submit-btn:hover { filter: brightness(1.08); }
+.submit-btn:active { transform: scale(0.97); }
+
+.form-success {
+  display: none;
+  text-align: center; padding: 32px 24px;
+  background: var(--green-dim);
+  border: 1px solid rgba(39,184,106,0.15);
+  border-radius: var(--r);
+}
+.form-success .success-icon { font-size: 36px; margin-bottom: 12px; }
+.form-success h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px; letter-spacing: 1px;
+  color: var(--text); margin-bottom: 8px;
+}
+.form-success p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+/* ─── FOOTER ───────────────────────────────────────────────── */
+footer {
+  position: relative; z-index: 1;
+  padding: 32px 24px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  max-width: 960px; margin: 0 auto;
+}
+.footer-brand {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; letter-spacing: 1.5px;
+  color: var(--text-muted);
+}
+.footer-copy {
+  font-size: 12px; color: var(--text-dim);
+}
+
+/* ─── ANIMATIONS ───────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0; transform: translateY(16px);
+  transition: opacity .55s ease-out, transform .55s ease-out;
+}
+.reveal.visible {
+  opacity: 1; transform: translateY(0);
+}
+
+/* ─── DIVIDER LINE ─────────────────────────────────────────── */
+.gold-divider {
+  position: relative; z-index: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,164,65,0.2), transparent);
+  margin: 0 24px;
+}
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-brand" href="#">
+    <span class="nav-icon">🎱</span>
+    <span class="nav-name">Whosonnext&nbsp;</span>
+  </a>
+  <a class="nav-cta" href="#signup">Get your pub set up</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">
+    <span class="eyebrow-dot"></span>
+    Live at pubs near you
+  </div>
+
+  <h1 class="hero-heading">
+    Winner<br><em>Stays On.</em><br>Sorted.
+  </h1>
+
+  <p class="hero-sub">
+    A pool night app built for the table in the corner.
+    Queue management, live leaderboards, and a TV mode —
+    all running on any phone, no app download needed.
+  </p>
+
+  <div class="hero-btns">
+    <a class="btn-primary" href="#signup">
+      Get started free
+      <span>→</span>
+    </a>
+    <a class="btn-secondary" href="#how">
+      See how it works
+    </a>
+  </div>
+
+  <!-- Mock phone preview -->
+  <div class="hero-preview">
+    <div class="phone-frame">
+      <div class="phone-bar">
+        <span class="phone-brand">🎱 The Crown</span>
+        <span class="phone-dot"></span>
+      </div>
+      <div class="phone-body">
+        <div class="mock-match">
+          <div class="mock-streak">🔥 Jamie is on a 4-game streak</div>
+          <div class="mock-player champ">
+            <div class="mock-role">Champion</div>
+            <div class="mock-name">JAMIE</div>
+          </div>
+          <div class="mock-vs">VS</div>
+          <div class="mock-player chal">
+            <div class="mock-role">Challenger</div>
+            <div class="mock-name">DAVE</div>
+          </div>
+          <div class="mock-btns">
+            <div class="mock-btn gold">Jamie Wins</div>
+            <div class="mock-btn red">Dave Wins</div>
+          </div>
+        </div>
+        <div class="mock-queue">
+          <div class="mock-q-title">
+            Next up <span class="mock-q-badge">3</span>
+          </div>
+          <div class="mock-q-item">
+            <span class="mock-q-num next">1</span> Sarah
+          </div>
+          <div class="mock-q-item">
+            <span class="mock-q-num">2</span> Tom
+          </div>
+          <div class="mock-q-item">
+            <span class="mock-q-num">3</span> Priya
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gold-divider"></div>
+
+<!-- FEATURES -->
+<section>
+  <div class="section-eyebrow">What you get</div>
+  <h2 class="section-heading reveal">Everything pool night needs</h2>
+  <p class="section-sub reveal">
+    No app store. No login for players. They just scan a QR code and join the queue.
+  </p>
+
+  <div class="features-grid">
+    <div class="feat-card reveal">
+      <span class="feat-icon">🏆</span>
+      <div class="feat-title">Winner Stays On</div>
+      <p class="feat-desc">Champion vs challenger format with automatic queue rotation and streak tracking. The table runs itself.</p>
+    </div>
+    <div class="feat-card reveal">
+      <span class="feat-icon">📺</span>
+      <div class="feat-title">TV Mode</div>
+      <p class="feat-desc">Cast the current match to any screen behind the bar. Big names, live updates, no faff.</p>
+    </div>
+    <div class="feat-card reveal">
+      <span class="feat-icon">📊</span>
+      <div class="feat-title">Live Leaderboard</div>
+      <p class="feat-desc">Wins, games played, and win ratios tracked across the whole night. Regulars love watching their rank climb.</p>
+    </div>
+    <div class="feat-card reveal">
+      <span class="feat-icon">📱</span>
+      <div class="feat-title">Works on any device</div>
+      <p class="feat-desc">A web app — nothing to download. Runs on the bar tablet, a phone on the table edge, anything with a browser.</p>
+    </div>
+    <div class="feat-card reveal">
+      <span class="feat-icon">🔄</span>
+      <div class="feat-title">Real-time sync</div>
+      <p class="feat-desc">Multiple people can view the queue at once. Results update live across every device in the pub.</p>
+    </div>
+    <div class="feat-card reveal">
+      <span class="feat-icon">🔒</span>
+      <div class="feat-title">Staff controls</div>
+      <p class="feat-desc">Admin mode lets bar staff adjust scores, manage the queue, and clear the session at the end of the night.</p>
+    </div>
+  </div>
+</section>
+
+<div class="gold-divider"></div>
+
+<!-- HOW IT WORKS -->
+<div class="how-section" id="how">
+  <div class="how-section-inner">
+    <div class="section-eyebrow">How it works</div>
+    <h2 class="section-heading reveal">Up and running in minutes</h2>
+    <p class="section-sub reveal">No technical setup. No IT. Just a link your punters can open on their phone.</p>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <div class="step-title">Register your pub</div>
+        <p class="step-desc">Fill in the form below — we'll set up your custom page and send you a link and QR code the same day.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <div class="step-title">Stick up the QR code</div>
+        <p class="step-desc">Print it out and put it on the table. Players scan it to join the queue on their own phones.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <div class="step-title">Let it run</div>
+        <p class="step-desc">The app handles everything — queue rotation, scores, streaks. You just pour the pints.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gold-divider"></div>
+
+<!-- PRICING -->
+<section>
+  <div class="section-eyebrow">Pricing</div>
+  <h2 class="section-heading reveal">Simple and fair</h2>
+  <p class="section-sub reveal">Start free for as long as you need. Pay only when you're happy it works for your pub.</p>
+
+  <div class="pricing-grid">
+    <div class="price-card reveal">
+      <div class="price-name">Trial</div>
+      <div class="price-amount">
+        <span class="price-num">Free</span>
+      </div>
+      <p class="price-desc">Get set up, try it with your regulars, no card needed.</p>
+      <ul class="price-feats">
+        <li>Your own pub page</li>
+        <li>QR code for the table</li>
+        <li>All core features</li>
+        <li>No time limit on the trial</li>
+      </ul>
+      <a class="price-btn ghost" href="#signup">Get started</a>
+    </div>
+
+    <div class="price-card featured reveal">
+      <div class="price-badge">Most popular</div>
+      <div class="price-name">Monthly</div>
+      <div class="price-amount">
+        <span class="price-num">£25</span>
+        <span class="price-period">/ month</span>
+      </div>
+      <p class="price-desc">Everything in the trial, with ongoing support and new features as they ship.</p>
+      <ul class="price-feats">
+        <li>Everything in Trial</li>
+        <li>Priority support</li>
+        <li>Early access to new features</li>
+        <li>Cancel any time</li>
+      </ul>
+      <a class="price-btn gold" href="#signup">Get started free</a>
+    </div>
+  </div>
+</section>
+
+<div class="gold-divider"></div>
+
+<!-- SIGN UP -->
+<div class="signup-section" id="signup">
+  <div class="signup-inner">
+    <div class="section-eyebrow" style="text-align:center">Get set up</div>
+    <h2 class="section-heading reveal">Get your pub on the board</h2>
+    <p class="section-sub reveal">
+      Fill this in and we'll get back to you with your link and QR code — usually the same day.
+    </p>
+
+    <!--
+      FORMSPREE SETUP (takes 2 minutes):
+      1. Go to formspree.io and create a free account
+      2. Create a new form — it gives you an action URL like https://formspree.io/f/yourcode
+      3. Replace YOUR_FORMSPREE_ID below with that code
+      Done. Submissions go straight to your email.
+    -->
+    <form
+      class="signup-form"
+      id="signupForm"
+      action="https://formspree.io/f/YOUR_FORMSPREE_ID"
+      method="POST"
+    >
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="pubName">Pub name</label>
+          <input class="form-input" type="text" id="pubName" name="pub_name" placeholder="The Red Lion" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="yourName">Your name</label>
+          <input class="form-input" type="text" id="yourName" name="your_name" placeholder="Jamie" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email address</label>
+        <input class="form-input" type="email" id="email" name="email" placeholder="jamie@theredlion.co.uk" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="message">Anything else? (optional)</label>
+        <input class="form-input" type="text" id="message" name="message" placeholder="e.g. we run pool nights on Thursdays">
+      </div>
+
+      <button class="submit-btn" type="submit">
+        Get set up — it's free
+        <span>🎱</span>
+      </button>
+
+      <p class="form-note">
+        No credit card. No commitment. We'll email you within 24 hours.
+      </p>
+    </form>
+
+    <div class="form-success" id="formSuccess">
+      <div class="success-icon">🎱</div>
+      <h3>You're on the list</h3>
+      <p>We'll be in touch with your pub's link and QR code within 24 hours. Get the pool table warmed up.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">🎱 whosonnext</div>
+  <div class="footer-copy">Built for pubs. Made in England.</div>
+</footer>
+
+<script>
+/* ─── SCROLL REVEAL ─────────────────────────────────────────── */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ─── FORM SUBMIT ────────────────────────────────────────────── */
+const form = document.getElementById('signupForm');
+const success = document.getElementById('formSuccess');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = form.querySelector('.submit-btn');
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'Accept': 'application/json' }
+    });
+    if (res.ok) {
+      form.style.display = 'none';
+      success.style.display = 'block';
+    } else {
+      throw new Error();
+    }
+  } catch {
+    btn.textContent = 'Something went wrong — try emailing us directly';
+    btn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
