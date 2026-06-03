@@ -857,7 +857,6 @@ const DEFAULT_MAX_CLIENTS = 20;
    STATE
 ═══════════════════════════════════════════════════════════ */
 let state = { winner: null, challenger: null, queue: [], scores: {}, streak: 0 };
-let renderedQueueNames = new Set(); // tracks which names are already drawn — prevents re-animation
 let clients        = [];
 let clientId       = null;
 let sessionId      = null;
@@ -1328,27 +1327,53 @@ function renderMatch() {
 
 function renderQueue() {
   const list = $('queueList');
-  list.innerHTML = '';
+  const queue = state.queue;
 
-  if (!state.queue.length) {
+  if (!queue.length) {
     list.innerHTML = '<div class="q-empty">Queue is empty</div>';
     $('queueCount').textContent = '0';
-    renderedQueueNames = new Set();
     return;
   }
-  $('queueCount').textContent = state.queue.length;
 
-  const nextRendered = new Set();
-  state.queue.forEach((name, i) => {
-    const isNew    = !renderedQueueNames.has(name);
+  // Remove the empty-state placeholder if present
+  const emptyEl = list.querySelector('.q-empty');
+  if (emptyEl) emptyEl.remove();
+
+  $('queueCount').textContent = queue.length;
+
+  // Index currently rendered items by name so we can reuse them
+  const existing = {};
+  list.querySelectorAll('.q-item[data-name]').forEach(el => {
+    existing[el.dataset.name] = el;
+  });
+
+  // Remove elements that are no longer in the queue
+  Object.keys(existing).forEach(name => {
+    if (!queue.includes(name)) existing[name].remove();
+  });
+
+  // Add, update, and reorder — never wipe the whole list
+  queue.forEach((name, i) => {
     const safe     = escapeHtml(name);
     const jsN      = name.replace(/'/g, "\\'");
     const posClass = i === 0 ? 'next' : i === 1 ? 'soon' : '';
     const waitNote = i === 0 ? 'Up next' : `~${i + 1} games`;
-    const div      = document.createElement('div');
-    // Only animate items that weren't already visible — suppresses flicker on re-renders
-    div.className  = isNew ? 'q-item' : 'q-item no-anim';
-    div.innerHTML  = `
+
+    let el = existing[name];
+    const isNew = !el;
+
+    if (isNew) {
+      // Brand new joiner — create with animation
+      el = document.createElement('div');
+      el.dataset.name = name;
+      el.className = 'q-item';
+    } else {
+      // Already on screen — update in place, no animation
+      el.className = 'q-item no-anim';
+    }
+
+    // Always refresh inner content (position number, wait time, admin buttons)
+    el.innerHTML = `
       <div class="q-pos ${posClass}">${i + 1}</div>
       <div class="q-name">${safe}</div>
       <div class="q-wait">${waitNote}</div>
@@ -1356,10 +1381,11 @@ function renderQueue() {
         ${adminUnlocked ? `<button class="q-btn up" onclick="bumpToTop('${jsN}')" title="Move to top">▲</button>` : ''}
         <button class="q-btn rm" onclick="removePlayer('${jsN}')" title="Remove">✕</button>
       </div>`;
-    list.appendChild(div);
-    nextRendered.add(name);
+
+    // Insert at the correct position without removing it first
+    const sibling = list.children[i];
+    if (sibling !== el) list.insertBefore(el, sibling || null);
   });
-  renderedQueueNames = nextRendered;
 }
 
 function renderLeaderboard() {
