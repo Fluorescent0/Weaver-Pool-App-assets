@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>The Weaver — Pool</title>
-<link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Fluorescent0/Weaver-Pool-App-assets/refs/heads/main/favicon.ico">
+<title>WhosOnNext — Pool</title>
+<link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Fluorescent0/Weaver-Pool-App-assets/refs/heads/main/WON_favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -793,7 +793,7 @@ footer {
     
   </footer>
 </div><div class="tv" id="tvMode" hidden>
-  <div class="tv-brand">THE WEAVER</div>
+  <div class="tv-brand" id="tvBrand">—</div>
   <div class="tv-clock" id="tvClock"></div>
   <button class="icon-btn tv-close" id="tvClose" title="Close">✕</button>
   <div class="tv-streak" id="tvStreak"></div>
@@ -838,7 +838,7 @@ footer {
 
 <div class="toast-wrap" id="toastWrap"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
@@ -1051,6 +1051,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.title = PUB_NAME + ' — Pool';
   const brandEl = document.getElementById('brandName');
   if (brandEl) brandEl.textContent = PUB_NAME;
+  const tvBrandEl = document.getElementById('tvBrand');
+  if (tvBrandEl) tvBrandEl.textContent = PUB_NAME.toUpperCase();
 
   // ── 5. Session ID is now pub-scoped ───────────────────────
   const today = new Date().toISOString().slice(0, 10);
@@ -1618,32 +1620,42 @@ let sessionSub = null;
 let connectionAttempt = 0;
 
 function startPollingRemote() {
-  if (sessionSub) supa.removeSubscription(sessionSub);
+  // v2: remove channel instead of removeSubscription
+  if (sessionSub) { supa.removeChannel(sessionSub); sessionSub = null; }
 
-  // 1. Setup with explicit error handling for the socket
+  // 1. v2 channel API — server-side filter means only this pub's session
+  //    fires the callback, reducing unnecessary traffic
   sessionSub = supa
-    .from('sessions')
-    .on('*', payload => {
-      if (payload.new && payload.new.id === sessionId) {
-        state = payload.new.state || state;
-        renderAll();
-        setBadge(true);
-        isRemote = true;
+    .channel('session:' + sessionId)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'sessions', filter: 'id=eq.' + sessionId },
+      payload => {
+        if (payload.new) {
+          // Only re-render if game state actually changed — heartbeat
+          // writes update `clients` not `state`, so skip those silently
+          const incoming = payload.new.state;
+          if (incoming && JSON.stringify(incoming) !== JSON.stringify(state)) {
+            state = incoming;
+            renderAll();
+          }
+          setBadge(true);
+          isRemote = true;
+        }
       }
-    })
-    .subscribe((status, err) => {
+    )
+    .subscribe(status => {
       if (status === 'SUBSCRIBED') {
-        console.log("Realtime Connected");
+        console.log('Realtime Connected');
         connectionAttempt = 0;
       }
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        console.warn("Realtime error, attempting soft reset...");
-        // If we hit a snag, trigger a silent re-sub after 5 seconds
+        console.warn('Realtime error, attempting soft reset...');
         setTimeout(() => startPollingRemote(), 5000);
       }
     });
 
-  // 2. Fallback Polling (Now significantly slower to avoid resource contention)
+  // 2. Fallback polling — only used if websocket drops
   clearInterval(pollingInterval);
   pollingInterval = setInterval(async () => {
     try {
@@ -1652,21 +1664,22 @@ function startPollingRemote() {
         .select('*')
         .eq('id', sessionId)
         .single();
-
       if (error) throw error;
-      
       if (data) {
-        state = data.state || state;
-        renderAll();
+        // Same guard — don't flicker the UI if nothing changed
+        const incoming = data.state;
+        if (incoming && JSON.stringify(incoming) !== JSON.stringify(state)) {
+          state = incoming;
+          renderAll();
+        }
         setBadge(true);
         isRemote = true;
       }
     } catch (e) {
-      // Don't kill the app logic, just mark as degraded
       setBadge(false);
-      console.warn("Polling fallback failed, retrying in 20s...");
+      console.warn('Polling fallback failed, retrying in 12s...');
     }
-  }, 12000); // Increased to 20s to ensure we aren't hitting rate limits
+  }, 12000);
 }
 
 function startHeartbeatRemote() {
@@ -1713,13 +1726,14 @@ function exportTXT() {
     '', '=== QUEUE ===',
     ...(state.queue.length ? state.queue.map((n, i) => `${i + 1}. ${n}`) : ['(empty)'])
   ];
+  const safeName = PUB_NAME.toLowerCase().replace(/\s+/g, '-');
   const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href     = URL.createObjectURL(blob);
-  a.download = `weaver-pool-${date}.txt`;
+  a.download = `${safeName}-pool-${date}.txt`;
   a.click();
   URL.revokeObjectURL(a.href);
-  toast('Exported', `weaver-pool-${date}.txt`, 'info');
+  toast('Exported', `${safeName}-pool-${date}.txt`, 'info');
 }
 
 /* ═══════════════════════════════════════════════════════════
