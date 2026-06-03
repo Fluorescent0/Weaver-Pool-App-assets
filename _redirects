@@ -1,8 +1,8 @@
-# 1. Pubs routes: Map deep links to the app
-/pubs/* /app/index.html 200
+# 1. Map /pubs/* to the /app/ folder
+/pubs/* /app/ 200
 
-# 2. App routes: Map the app container
-/app/* /app/index.html 200
+# 2. Map /app/* to the /app/ folder
+/app/* /app/ 200
 
-# 3. Fallback: Serve the root index
-/* /index.html 200
+# 3. Map everything else to the root folder
+/* / 200
