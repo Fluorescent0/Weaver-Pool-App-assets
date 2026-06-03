@@ -1,0 +1,1782 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>The Weaver — Pool</title>
+<link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Fluorescent0/Weaver-Pool-App-assets/refs/heads/main/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & ROOT ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:           #09090C;
+  --surface:      #111318;
+  --surface-2:    #181C26;
+  --surface-3:    #1E2330;
+  --border:       rgba(255,255,255,0.06);
+  --border-soft:  rgba(255,255,255,0.03);
+  --border-hi:    rgba(255,255,255,0.11);
+
+  --gold:         #D4A441;
+  --gold-lt:      #EEC060;
+  --gold-dim:     rgba(212,164,65,0.10);
+  --gold-glow:    rgba(212,164,65,0.22);
+
+  --red:          #D95050;
+  --red-lt:       #F07070;
+  --red-dim:      rgba(217,80,80,0.10);
+
+  --green:        #27B86A;
+  --green-dim:    rgba(39,184,106,0.10);
+
+  --text:         #EDE9E0;
+  --text-muted:   #6B7280;
+  --text-dim:     #353A48;
+
+  --r:    14px;
+  --r-sm: 9px;
+  --r-xs: 5px;
+
+  font-family: 'Outfit', system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* ─── CANVAS LAYERS ────────────────────────────────────── */
+#snowCanvas {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 1;
+  display: none;
+}
+#particles {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 99;
+}
+
+/* ─── APP WRAPPER ──────────────────────────────────────── */
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 60px;
+  position: relative; z-index: 2;
+}
+
+/* ─── HEADER ───────────────────────────────────────────── */
+.header {
+  position: sticky; top: 0; z-index: 50;
+  height: 54px;
+  background: rgba(9,9,12,0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+}
+.brand {
+  display: flex; align-items: center; gap: 9px;
+}
+.brand-icon { font-size: 20px; line-height: 1; }
+.brand-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 21px; letter-spacing: 1.8px;
+  color: var(--text);
+}
+.header-right {
+  display: flex; align-items: center; gap: 8px;
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--red); flex-shrink: 0;
+  transition: background 0.3s;
+  box-shadow: 0 0 6px currentColor;
+}
+.status-dot.online { background: var(--green); }
+.status-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.icon-btn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted); font-size: 15px;
+  cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: background .15s, color .15s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.icon-btn:active { transform: scale(0.91); }
+.icon-btn:hover  { background: var(--surface-2); color: var(--text); }
+.icon-btn.unlocked { color: var(--gold); border-color: var(--gold-dim); }
+
+/* ─── MAIN CONTENT ─────────────────────────────────────── */
+main {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.col-left, .col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─── MATCH CARD ───────────────────────────────────────── */
+.match-card {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% -5%, rgba(20,75,42,0.22) 0%, transparent 70%),
+    var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  position: relative;
+}
+/* Gold top rule */
+.match-card::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold) 40%, var(--gold-lt) 60%, transparent 100%);
+  opacity: 0.55;
+}
+
+/* Streak banner */
+.streak-bar {
+  display: none;
+  align-items: center; justify-content: center;
+  gap: 7px;
+  padding: 8px 16px;
+  background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  border-bottom: 1px solid rgba(212,164,65,0.12);
+  font-size: 12px; font-weight: 600;
+  color: var(--gold); letter-spacing: 0.3px;
+}
+.streak-bar.on { display: flex; }
+.streak-fire { font-size: 15px; }
+
+/* Player slots */
+.match-body { padding: 20px 20px 16px; }
+
+.player-slots { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+
+.p-slot {
+  border-radius: var(--r-sm);
+  padding: 14px 14px 12px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 2px;
+  transition: background .3s, border-color .3s;
+  position: relative;
+}
+.p-slot.champ {
+  background: var(--gold-dim);
+  border: 1px solid rgba(212,164,65,0.18);
+}
+.p-slot.chal {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+}
+.p-slot.empty { opacity: 0.45; }
+
+.p-label {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+}
+.p-slot.champ .p-label { color: var(--gold); }
+.p-slot.chal  .p-label { color: var(--text-muted); }
+
+.p-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(46px, 13vw, 64px);
+  line-height: 1; text-align: center;
+  letter-spacing: 0.5px;
+  transition: transform .25s, opacity .25s;
+  word-break: break-word;
+}
+.p-slot.champ .p-name { color: var(--gold-lt); }
+.p-slot.chal  .p-name { color: var(--text); }
+
+.p-stat {
+  font-size: 11px; color: var(--text-muted);
+  font-weight: 500; min-height: 16px;
+}
+
+/* VS row */
+.vs-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.vs-line { flex: 1; height: 1px; background: var(--border); }
+.vs-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px; letter-spacing: 4px;
+  color: var(--text-dim);
+}
+
+/* Idle state */
+.idle-msg {
+  text-align: center; padding: 10px;
+  font-size: 13px; color: var(--text-muted);
+}
+
+/* ─── ACTION BUTTONS ───────────────────────────────────── */
+.actions { display: flex; flex-direction: column; gap: 8px; }
+.actions-pair { display: flex; gap: 8px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 7px; border: 0; border-radius: var(--r-sm);
+  font-family: 'Outfit', sans-serif; font-weight: 700;
+  cursor: pointer; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .12s, filter .12s;
+  position: relative; overflow: hidden;
+}
+.btn:active { transform: scale(0.95); filter: brightness(0.88); }
+.btn:disabled { opacity: 0.3; pointer-events: none; }
+
+.btn-champ {
+  flex: 1; padding: 17px 12px; font-size: 14px;
+  background: linear-gradient(135deg, #B8892B, #D4A441, #EEC060);
+  color: #0D0800;
+  letter-spacing: 0.1px;
+}
+.btn-chal {
+  flex: 1; padding: 17px 12px; font-size: 14px;
+  background: linear-gradient(135deg, #A03333, #D95050, #F07070);
+  color: #fff;
+  letter-spacing: 0.1px;
+}
+.skip-link {
+  display: block; width: 100%;
+  padding: 9px; text-align: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px; font-weight: 500;
+  color: var(--text-muted);
+  background: none; border: none;
+  cursor: pointer; letter-spacing: 0.1px;
+  transition: color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.skip-link:hover, .skip-link:active { color: var(--text); }
+
+.btn-add {
+  padding: 0 22px; height: 52px; font-size: 15px; flex-shrink: 0;
+  background: linear-gradient(135deg, #1A7A48, #27B86A);
+  color: #fff; white-space: nowrap;
+}
+
+.btn-ghost {
+  padding: 9px 14px; font-size: 13px; font-weight: 600;
+  background: transparent; color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--border-hi); }
+
+.btn-danger {
+  padding: 9px 14px; font-size: 13px; font-weight: 600;
+  background: var(--red-dim); color: var(--red);
+  border: 1px solid rgba(217,80,80,0.18);
+}
+.btn-danger:hover { background: rgba(217,80,80,0.18); }
+
+.btn-gold {
+  padding: 9px 14px; font-size: 13px; font-weight: 600;
+  background: var(--gold-dim); color: var(--gold);
+  border: 1px solid rgba(212,164,65,0.2);
+}
+
+/* Ripple */
+.btn .ripple {
+  position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  transform: scale(0);
+  animation: ripple .4s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes ripple { to { transform: scale(5); opacity: 0; } }
+
+/* ─── ADD FORM ─────────────────────────────────────────── */
+.add-form { display: flex; gap: 9px; position: relative; }
+
+.input-wrap { flex: 1; position: relative; }
+
+input[type="text"] {
+  width: 100%; height: 52px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif; font-size: 16px;
+  padding: 0 14px; outline: none;
+  -webkit-appearance: none;
+  transition: border-color .15s;
+}
+input[type="text"]::placeholder { color: var(--text-muted); }
+input[type="text"]:focus { border-color: var(--green); }
+
+.autocomplete {
+  position: absolute; top: 100%; left: 0; right: 0;
+  margin-top: 4px; z-index: 80;
+  background: var(--surface-3);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  display: none;
+}
+.autocomplete.open { display: block; }
+.ac-item {
+  padding: 11px 14px; font-size: 14px;
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover, .ac-item.focus { background: var(--surface-2); color: var(--gold); }
+.ac-icon { font-size: 12px; color: var(--text-muted); }
+
+/* ─── SECTION CARD ─────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+}
+.card-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.card-title {
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  display: flex; align-items: center; gap: 7px;
+}
+/* Queue count badge */
+.q-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10px; font-weight: 700;
+  color: var(--text-muted);
+  padding: 0 5px;
+}
+
+/* ─── QUEUE ────────────────────────────────────────────── */
+.queue-list { display: flex; flex-direction: column; gap: 6px; }
+
+.q-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 10px 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  animation: fadeSlideIn .2s ease-out both;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.q-pos {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; color: var(--text-dim);
+  width: 22px; text-align: center; flex-shrink: 0; line-height: 1;
+}
+.q-pos.next { color: var(--gold); }
+.q-pos.soon { color: var(--text-muted); }
+.q-name { flex: 1; font-weight: 500; font-size: 15px; }
+.q-wait { font-size: 11px; color: var(--text-muted); }
+
+.q-btns {
+  display: flex; gap: 3px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.q-item:hover .q-btns { opacity: 1; }
+@media (hover: none) { .q-btns { opacity: 1; } }
+
+.q-btn {
+  width: 30px; height: 30px;
+  border-radius: 6px; border: 0;
+  background: transparent; color: var(--text-muted);
+  cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.q-btn:hover { background: var(--surface-3); color: var(--text); }
+.q-btn.rm:hover { color: var(--red); }
+.q-btn.up:hover { color: var(--gold); }
+
+.q-empty {
+  text-align: center; color: var(--text-dim);
+  font-size: 13px; padding: 18px;
+}
+
+/* ─── LEADERBOARD ──────────────────────────────────────── */
+.lb-list { display: flex; flex-direction: column; gap: 5px; }
+
+.lb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 10px 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  border-left: 2px solid transparent;
+}
+.lb-item.lb-top {
+  border-left-color: rgba(212,164,65,0.35);
+}
+.lb-rank {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; color: var(--text-dim);
+  width: 20px; text-align: center; flex-shrink: 0; line-height: 1;
+}
+.lb-rank.r1 { color: #D4A441; }
+.lb-rank.r2 { color: #9CA3AF; }
+.lb-rank.r3 { color: #B07040; }
+.lb-name { flex: 1; font-weight: 600; font-size: 14px; }
+.lb-wins {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px; color: var(--gold); line-height: 1;
+}
+.lb-wins-lbl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.lb-ratio { font-size: 11px; color: var(--text-muted); margin-right: 4px; }
+
+.lb-edit-btn {
+  width: 28px; height: 28px; border-radius: 5px; border: 0;
+  background: transparent; color: var(--text-dim);
+  cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color .12s, background .12s;
+  opacity: 0;
+}
+.lb-item:hover .lb-edit-btn { opacity: 1; color: var(--gold); }
+@media (hover: none) { .lb-edit-btn { opacity: 0.7; } }
+
+.lb-score-input {
+  width: 50px; height: 28px;
+  background: var(--surface-3);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  color: var(--gold);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px; text-align: center;
+  outline: none; padding: 0 4px;
+}
+
+.lb-footer {
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── TOAST ────────────────────────────────────────────── */
+.toast-wrap {
+  position: fixed;
+  top: 62px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+  pointer-events: none;
+  width: calc(100% - 28px);
+  max-width: 400px;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  border: 1px solid var(--border-hi);
+  box-shadow: 0 10px 32px rgba(0,0,0,0.45);
+  font-size: 13px; font-weight: 500;
+  pointer-events: all; cursor: pointer; width: 100%;
+  animation: tIn .22s ease-out both;
+}
+@keyframes tIn {
+  from { opacity: 0; transform: translateY(-7px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast.out { animation: tOut .18s ease-in forwards; }
+@keyframes tOut { to { opacity: 0; transform: translateY(-5px) scale(0.95); } }
+.toast-ico { font-size: 17px; flex-shrink: 0; }
+.toast-body { flex: 1; }
+.toast-t { font-weight: 700; font-size: 13px; }
+.toast-m { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.toast-undo {
+  font-size: 12px; font-weight: 700; color: var(--gold);
+  background: transparent; border: 0; cursor: pointer;
+  padding: 4px 2px; flex-shrink: 0;
+}
+.toast.win   { border-color: rgba(212,164,65,0.28); }
+.toast.added { border-color: rgba(39,184,106,0.22); }
+.toast.error { border-color: rgba(217,80,80,0.22); }
+
+/* ─── MODALS ───────────────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.65);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fadeIn .18s ease-out both;
+}
+.overlay[hidden] { display: none; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  padding: 22px;
+  width: 100%; max-width: 320px;
+  animation: scaleIn .2s ease-out both;
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.modal-title { font-weight: 700; font-size: 16px; margin-bottom: 5px; }
+.modal-body  { font-size: 13px; color: var(--text-muted); line-height: 1.55; margin-bottom: 18px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ─── ADMIN SHEET (bottom-sheet) ───────────────────────── */
+.sheet-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: fadeIn .18s ease-out both;
+}
+.sheet-overlay[hidden] { display: none; }
+
+.admin-sheet {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r) var(--r) 0 0;
+  padding: 14px 18px 44px;
+  width: 100%; max-width: 480px;
+  animation: slideUp .25s ease-out both;
+}
+@keyframes slideUp {
+  from { transform: translateY(50px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--border-hi);
+  border-radius: 999px;
+  margin: 0 auto 14px;
+}
+.sheet-title { font-weight: 700; font-size: 16px; margin-bottom: 3px; }
+.sheet-sub   { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; }
+.sheet-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* ─── TV OVERLAY ───────────────────────────────────────── */
+.tv {
+  position: fixed; inset: 0; z-index: 150;
+  background: #05060A;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 30px;
+}
+.tv[hidden] { display: none; }
+
+.tv-brand {
+  position: absolute; top: 26px;
+  left: 0; right: 0; text-align: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 6px;
+  color: rgba(255,255,255,0.12);
+}
+.tv-close {
+  position: absolute; top: 16px; right: 16px;
+}
+.tv-streak {
+  position: absolute; top: 66px;
+  left: 0; right: 0; text-align: center;
+  font-size: 13px; font-weight: 600;
+  color: var(--gold); opacity: 0;
+  transition: opacity .3s;
+}
+.tv-streak.on { opacity: 1; }
+
+.tv-match {
+  display: flex; align-items: center;
+  justify-content: center; gap: 40px;
+  width: 100%; max-width: 1000px;
+}
+.tv-player {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+}
+.tv-role {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 4px; text-transform: uppercase;
+}
+.tv-player.champ .tv-role { color: var(--gold); }
+.tv-player.chal  .tv-role { color: var(--text-muted); }
+.tv-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(48px, 9vw, 110px);
+  line-height: .9; text-align: center;
+  word-break: break-all;
+}
+.tv-player.champ .tv-name { color: var(--gold-lt); }
+.tv-player.chal  .tv-name { color: var(--text); }
+.tv-stat { font-size: 14px; color: var(--text-muted); }
+
+.tv-vs { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+.tv-vs-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px; letter-spacing: 4px;
+  color: rgba(255,255,255,0.09);
+}
+
+.tv-queue {
+  position: absolute; bottom: 28px;
+  left: 0; right: 0;
+  text-align: center; font-size: 13px;
+  color: rgba(255,255,255,0.22);
+  letter-spacing: 1px;
+}
+.tv-clock {
+  position: absolute; top: 26px; right: 34px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; letter-spacing: 2px;
+  color: rgba(255,255,255,0.15);
+}
+
+/* ─── WIN FLASH ────────────────────────────────────────── */
+@keyframes namePop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+.pop { animation: namePop .35s cubic-bezier(.22,1,.36,1) both; }
+
+/* ─── MISC ─────────────────────────────────────────────── */
+.sep { height: 1px; background: var(--border); margin: 8px 0; }
+
+footer {
+  text-align: center; padding: 5px;
+  color: transparent; font-size: 10px;
+  user-select: none;
+}
+
+/* ─── DESKTOP LAYOUT ───────────────────────────────────── */
+@media (min-width: 860px) {
+  .app { max-width: 900px; }
+  main {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 12px;
+    align-items: start;
+  }
+}
+</style>
+</head>
+<body>
+
+<canvas id="snowCanvas"></canvas>
+<canvas id="particles"></canvas>
+
+<div class="app">
+
+  <header class="header">
+    <div class="brand">
+      <span class="brand-icon">🎱</span>
+      <span class="brand-name" id="brandName">Loading…</span>
+    </div>
+    <div class="header-right">
+      <div class="status-dot" id="statusDot"></div>
+      
+      <button class="icon-btn" id="adminBtn" title="Admin">
+      <svg width="13" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </button>
+      <button class="icon-btn" id="tvBtn" title="TV Mode">
+      <svg width="15" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <polyline points="8 21 12 17 16 21"/>
+      </svg>
+    </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="col-left">
+      <div class="match-card">
+        <div class="streak-bar" id="streakBar">
+          <span class="streak-fire">🔥</span>
+          <span id="streakText"></span>
+        </div>
+        <div class="match-body">
+          <div class="player-slots">
+            <div class="p-slot champ" id="champSlot">
+              <div class="p-label">Champion</div>
+              <div class="p-name" id="champName">—</div>
+              <div class="p-stat" id="champStat"></div>
+            </div>
+            <div class="vs-row">
+              <div class="vs-line"></div>
+              <div class="vs-text">VS</div>
+              <div class="vs-line"></div>
+            </div>
+            <div class="p-slot chal" id="chalSlot">
+              <div class="p-label">Challenger</div>
+              <div class="p-name" id="chalName">—</div>
+              <div class="p-stat" id="chalStat"></div>
+            </div>
+          </div>
+
+          <div class="actions" id="matchActions">
+            <div class="actions-pair">
+              <button class="btn btn-champ" id="champWinsBtn">Champion Wins</button>
+              <button class="btn btn-chal"  id="chalWinsBtn">Challenger Wins</button>
+            </div>
+            <button class="skip-link" id="skipBtn">Skip challenger</button>
+          </div>
+
+          <div class="idle-msg" id="idleMsg" style="display:none">
+            Add your name below to get in line
+          </div>
+        </div>
+      </div>
+
+      <div class="add-section">
+        <div class="add-form">
+          <div class="input-wrap">
+            <input type="text" id="nameInput" placeholder="Your name — tap to join" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" maxlength="30">
+            <div class="autocomplete" id="autoList"></div>
+          </div>
+          <button class="btn btn-add" id="addBtn">Join Queue</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <div class="card q-section">
+        <div class="card-header">
+          <span class="card-title">
+            Next up
+          </span>
+          <span class="q-badge" id="queueCount">0</span>
+        </div>
+        <div class="queue-list" id="queueList"></div>
+      </div>
+
+      <div class="card lb-section">
+        <div class="card-header">
+          <span class="card-title">Leaderboard</span>
+          <div class="lb-footer" style="margin:0;padding:0;border:0" id="lbAdminBar"></div>
+        </div>
+        <div class="lb-list" id="lbList"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    
+  </footer>
+</div><div class="tv" id="tvMode" hidden>
+  <div class="tv-brand">THE WEAVER</div>
+  <div class="tv-clock" id="tvClock"></div>
+  <button class="icon-btn tv-close" id="tvClose" title="Close">✕</button>
+  <div class="tv-streak" id="tvStreak"></div>
+  <div class="tv-match">
+    <div class="tv-player champ">
+      <div class="tv-role">Champion</div>
+      <div class="tv-name" id="tvChampName">—</div>
+      <div class="tv-stat" id="tvChampStat"></div>
+    </div>
+    <div class="tv-vs">
+      <div class="tv-vs-text">VS</div>
+    </div>
+    <div class="tv-player chal">
+      <div class="tv-role">Challenger</div>
+      <div class="tv-name" id="tvChalName">—</div>
+      <div class="tv-stat" id="tvChalStat"></div>
+    </div>
+  </div>
+  <div class="tv-queue" id="tvQueue"></div>
+</div>
+
+<div class="sheet-overlay" id="adminOverlay" hidden>
+  <div class="admin-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Admin Panel</div>
+    <div class="sheet-sub" id="adminSub">Enter passkey to unlock controls.</div>
+    <div id="adminContent">
+      </div>
+  </div>
+</div>
+
+<div class="overlay" id="confirmOverlay" hidden>
+  <div class="modal-card">
+    <div class="modal-title">Clear entire session?</div>
+    <div class="modal-body">This resets the queue, current match and all scores. It cannot be undone.</div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelClearBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmClearBtn">Yes, clear all</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.min.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════════════ */
+const SUPABASE_URL      = "https://faxosthjdprblsicpqye.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZheG9zdGhqZHByYmxzaWNwcXllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjUwMTMsImV4cCI6MjA3ODcwMTAxM30.n87ztgEHte2XW3PQ67x-On_izxTJbhlX7vNeiKMtLc8";
+let SETTINGS_PASSKEY  = "pool";   // overwritten from Supabase at boot
+let PUB_NAME          = "";       // overwritten from Supabase at boot
+const HEARTBEAT_MS      = 20000;
+const CLIENT_TIMEOUT_MS = 60000;
+const DEFAULT_MAX_CLIENTS = 20;
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+let state = { winner: null, challenger: null, queue: [], scores: {}, streak: 0 };
+let clients        = [];
+let clientId       = null;
+let sessionId      = null;
+let supa           = null;
+let isRemote       = false;
+let pollingInterval   = null;
+let heartbeatInterval = null;
+let maxClients     = DEFAULT_MAX_CLIENTS;
+let adminUnlocked  = false;
+let lastState      = null; // for undo
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+
+function cryptoId() {
+  return 'c_' + [...crypto.getRandomValues(new Uint8Array(8))].map(n => n.toString(16).padStart(2, '0')).join('');
+}
+function escapeHtml(s) {
+  return ('' + s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+}
+function ensureScores(n) {
+  if (!state.scores[n]) state.scores[n] = { wins: 0, played: 0 };
+}
+function snapshot() {
+  lastState = JSON.parse(JSON.stringify(state));
+}
+function haptic(ms = 8) {
+  if ('vibrate' in navigator) navigator.vibrate(ms);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST SYSTEM
+═══════════════════════════════════════════════════════════ */
+const ICONS = { win:'🏆', added:'✅', error:'⚠️', info:'ℹ️', skip:'⏭' };
+
+function toast(title, msg = '', type = 'info', showUndo = false) {
+  const wrap = $('toastWrap');
+  const el   = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `
+    <span class="toast-ico">${ICONS[type] || '•'}</span>
+    <div class="toast-body">
+      <div class="toast-t">${escapeHtml(title)}</div>
+      ${msg ? `<div class="toast-m">${escapeHtml(msg)}</div>` : ''}
+    </div>
+    ${showUndo ? `<button class="toast-undo" id="undoBtn">Undo</button>` : ''}
+  `;
+  if (showUndo) {
+    el.querySelector('#undoBtn').addEventListener('click', e => { e.stopPropagation(); doUndo(); dismissToast(el); });
+  }
+  el.addEventListener('click', () => dismissToast(el));
+  wrap.appendChild(el);
+  const timeout = showUndo ? 5000 : 2800;
+  el._timer = setTimeout(() => dismissToast(el), timeout);
+  return el;
+}
+
+function dismissToast(el) {
+  if (!el || !el.isConnected) return;
+  clearTimeout(el._timer);
+  el.classList.add('out');
+  el.addEventListener('animationend', () => el.remove(), { once: true });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UNDO
+═══════════════════════════════════════════════════════════ */
+function doUndo() {
+  if (!lastState) return;
+  state = lastState;
+  lastState = null;
+  writeState();
+  renderAll();
+  toast('Undone', 'Last action reversed', 'info');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PARTICLES
+═══════════════════════════════════════════════════════════ */
+const pCanvas = $('particles');
+const pCtx    = pCanvas.getContext('2d');
+let pList = [];
+
+function resizeCanvas() {
+  pCanvas.width  = window.innerWidth;
+  pCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Particle {
+  constructor(x, y, color) {
+    this.x = x; this.y = y;
+    this.vx = (Math.random() - 0.5) * 9;
+    this.vy = (Math.random() - 0.9) * 9;
+    this.alpha = 1;
+    this.w = Math.random() * 7 + 3;
+    this.h = Math.random() * 4 + 2;
+    this.rot = Math.random() * Math.PI * 2;
+    this.rotV = (Math.random() - 0.5) * 0.25;
+    this.color = color;
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy;
+    this.vy += 0.22; this.alpha -= 0.017;
+    this.rot += this.rotV;
+  }
+  draw() {
+    pCtx.save();
+    pCtx.globalAlpha = Math.max(0, this.alpha);
+    pCtx.fillStyle   = this.color;
+    pCtx.translate(this.x, this.y);
+    pCtx.rotate(this.rot);
+    pCtx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+    pCtx.restore();
+  }
+}
+
+let pRaf = null;
+function burst(colors = ['#D4A441', '#EEC060', '#fff', '#27B86A']) {
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight * 0.42;
+  for (let i = 0; i < 70; i++) {
+    pList.push(new Particle(cx, cy, colors[i % colors.length]));
+  }
+  if (!pRaf) pAnimate();
+}
+function pAnimate() {
+  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  pList = pList.filter(p => p.alpha > 0);
+  pList.forEach(p => { p.update(); p.draw(); });
+  if (pList.length > 0) pRaf = requestAnimationFrame(pAnimate);
+  else { pRaf = null; pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height); }
+}
+
+/* Button ripple */
+function addRipple(btn, e) {
+  const rect = btn.getBoundingClientRect();
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const size = Math.max(rect.width, rect.height) * 1.5;
+  const x = (e.clientX - rect.left) - size / 2;
+  const y = (e.clientY - rect.top)  - size / 2;
+  r.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px`;
+  btn.appendChild(r);
+  r.addEventListener('animationend', () => r.remove(), { once: true });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIFECYCLE
+═══════════════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', async () => {
+  // ── 1. Read pub slug from URL (/pubs/<slug>) ──────────────
+  const slug = window.location.pathname.split('/pubs/')[1]?.replace(/\/$/, '') || null;
+
+  clientId   = localStorage.getItem('pub_pool_clientId') || cryptoId();
+  localStorage.setItem('pub_pool_clientId', clientId);
+  maxClients = parseInt(localStorage.getItem('pub_pool_maxClients')) || DEFAULT_MAX_CLIENTS;
+
+  // ── 2. Boot Supabase early so we can fetch pub config ─────
+  try {
+    if (!window.supabase) throw new Error('Supabase not loaded');
+    supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (e) {
+    console.warn('Supabase not available:', e);
+    supa = null;
+  }
+
+  // ── 3. Fetch pub config from the pubs table ───────────────
+  if (supa && slug) {
+    try {
+      const { data, error } = await supa
+        .from('pubs')
+        .select('name, passkey')
+        .eq('slug', slug)
+        .single();
+
+      if (error || !data) throw new Error('Pub not found: ' + slug);
+
+      PUB_NAME         = data.name;
+      SETTINGS_PASSKEY = data.passkey;
+    } catch (e) {
+      console.warn('Could not load pub config:', e);
+      PUB_NAME = 'WhosOnNext'; // fallback
+    }
+  } else {
+    PUB_NAME = 'WhosOnNext'; // no slug = landing / dev mode
+  }
+
+  // ── 4. Apply pub name to page ─────────────────────────────
+  document.title = PUB_NAME + ' — Pool';
+  const brandEl = document.getElementById('brandName');
+  if (brandEl) brandEl.textContent = PUB_NAME;
+
+  // ── 5. Session ID is now pub-scoped ───────────────────────
+  const today = new Date().toISOString().slice(0, 10);
+  sessionId = slug ? `pool-${slug}-${today}` : `pool-dev-${today}`;
+
+  wireUI();
+
+  // ── 6. Connect to session on Supabase ─────────────────────
+  try {
+    if (!supa) throw new Error('Supabase not loaded');
+    await ensureSessionOnServer();
+    await joinSession();
+    startPollingRemote();
+    startHeartbeatRemote();
+    isRemote = true;
+    setBadge(true);
+  } catch (e) {
+    console.warn('Supabase unavailable, falling back to local:', e);
+    supa = null; isRemote = false;
+    setBadge(false);
+    loadLocal();
+    startHeartbeatLocal();
+  }
+
+  assignInitialMatch();
+  renderAll();
+
+  // December snow
+  if (new Date().getMonth() === 11) initSnow();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   WIRE UI
+═══════════════════════════════════════════════════════════ */
+function wireUI() {
+  /* Main actions */
+  $('champWinsBtn').addEventListener('click', e => { addRipple(e.currentTarget, e); haptic(); champWins(); });
+  $('chalWinsBtn').addEventListener('click',  e => { addRipple(e.currentTarget, e); haptic(); chalWins();  });
+  $('skipBtn').addEventListener('click',      () => { haptic(); skipChal(); });
+
+  /* Add player */
+  $('addBtn').addEventListener('click', () => { haptic(); addPlayer(); });
+  $('nameInput').addEventListener('keydown', e => {
+    const list = $('autoList');
+    const items = list.querySelectorAll('.ac-item');
+    const focused = list.querySelector('.ac-item.focus');
+    if (e.key === 'Enter') {
+      if (focused) { $('nameInput').value = focused.dataset.name; }
+      hideAutocomplete();
+      haptic(); addPlayer();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (items.length) {
+        const next = focused ? (focused.nextElementSibling || items[0]) : items[0];
+        focused?.classList.remove('focus');
+        next.classList.add('focus');
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (items.length) {
+        const prev = focused ? (focused.previousElementSibling || items[items.length - 1]) : items[items.length - 1];
+        focused?.classList.remove('focus');
+        prev.classList.add('focus');
+      }
+    } else if (e.key === 'Escape') {
+      hideAutocomplete();
+    }
+  });
+  $('nameInput').addEventListener('input', () => updateAutocomplete());
+  $('nameInput').addEventListener('blur',  () => setTimeout(hideAutocomplete, 150));
+
+  /* TV */
+  $('tvBtn').addEventListener('click',   () => openTV());
+  $('tvClose').addEventListener('click', () => closeTV());
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeTV(); hideAdmin(); }
+    if (e.key === 'f' && $('tvMode') && !$('tvMode').hidden) toggleFullscreen();
+  });
+  $('tvMode').addEventListener('click', e => {
+    if (e.target === $('tvMode')) toggleFullscreen();
+  });
+
+  /* Admin */
+  $('adminBtn').addEventListener('click', () => openAdmin());
+  $('adminOverlay').addEventListener('click', e => { if (e.target === $('adminOverlay')) hideAdmin(); });
+
+  /* Clear confirm */
+  $('confirmClearBtn').addEventListener('click', () => { doClearAll(); $('confirmOverlay').hidden = true; });
+  $('cancelClearBtn').addEventListener('click',  () => { $('confirmOverlay').hidden = true; });
+  $('confirmOverlay').addEventListener('click',  e => { if (e.target === $('confirmOverlay')) $('confirmOverlay').hidden = true; });
+
+  /* Expose for inline event handlers in rendered rows */
+  window.removePlayer = removePlayer;
+  window.bumpToTop    = bumpToTop;
+  window.editScore    = editScoreInline;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MATCH LOGIC
+═══════════════════════════════════════════════════════════ */
+function assignInitialMatch() {
+  if (!state.winner    && state.queue.length > 0) state.winner     = state.queue.shift();
+  if (!state.challenger && state.queue.length > 0) state.challenger = state.queue.shift();
+}
+
+function champWins() {
+  if (!state.winner || !state.challenger) return;
+  snapshot();
+  ensureScores(state.winner); ensureScores(state.challenger);
+  state.scores[state.winner].wins++;
+  state.scores[state.winner].played++;
+  state.scores[state.challenger].played++;
+  state.streak = (state.streak || 0) + 1;
+
+  const prevChamp = state.winner;
+  state.queue.push(state.challenger);
+  state.challenger = state.queue.shift() || null;
+
+  writeState(); renderAll();
+  burst(['#D4A441','#EEC060','#fff','#C49A30']);
+  const msg = state.streak > 1 ? `${prevChamp} wins! ${state.streak}-game streak 🔥` : `${prevChamp} wins!`;
+  toast('Champion wins!', msg, 'win', true);
+}
+
+function chalWins() {
+  if (!state.challenger) return;
+  snapshot();
+  ensureScores(state.challenger);
+  if (state.winner) ensureScores(state.winner);
+  if (state.winner) { state.scores[state.winner].played++; state.queue.push(state.winner); }
+  state.scores[state.challenger].wins++;
+  state.scores[state.challenger].played++;
+  state.streak = 1;
+
+  const newChamp = state.challenger;
+  state.winner     = newChamp;
+  state.challenger = state.queue.shift() || null;
+
+  writeState(); renderAll();
+  burst(['#D4A441','#fff','#EEC060','#27B86A']);
+  toast('Challenger wins!', `${newChamp} takes the table!`, 'win', true);
+}
+
+function skipChal() {
+  if (!state.challenger) return;
+  snapshot();
+  const skipped = state.challenger;
+  state.queue.push(state.challenger);
+  state.challenger = state.queue.shift() || null;
+  writeState(); renderAll();
+  toast('Skipped', `${skipped} moved to the back of the queue`, 'skip', true);
+}
+
+function addPlayer() {
+  const name = $('nameInput').value.trim();
+  if (!name) { $('nameInput').focus(); return; }
+
+  if (state.queue.includes(name) || state.winner === name || state.challenger === name) {
+    toast('Already in game', `${name} is already queued or playing`, 'error');
+    return;
+  }
+
+  $('nameInput').value = '';
+  hideAutocomplete();
+  ensureScores(name);
+  state.queue.push(name);
+  assignInitialMatch();
+  writeState(); renderAll();
+  toast('Added!', `${name} is #${state.queue.length + (state.challenger ? 1 : 0) + (state.winner ? 0 : 0)} in queue`, 'added');
+}
+
+function removePlayer(name) {
+  snapshot();
+  state.queue = state.queue.filter(n => n !== name);
+
+  if (state.winner === name) {
+    // Promote challenger, pull new challenger
+    state.winner     = state.challenger;
+    state.challenger = state.queue.shift() || null;
+    state.streak     = 0;
+  } else if (state.challenger === name) {
+    state.challenger = state.queue.shift() || null;
+  }
+
+  writeState(); renderAll();
+  toast('Removed', `${name} removed`, 'info');
+}
+
+function bumpToTop(name) {
+  state.queue = state.queue.filter(n => n !== name);
+  state.queue.unshift(name);
+  writeState(); renderAll();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AUTOCOMPLETE
+═══════════════════════════════════════════════════════════ */
+function updateAutocomplete() {
+  const val = $('nameInput').value.trim().toLowerCase();
+  const list = $('autoList');
+  if (!val || val.length < 1) { hideAutocomplete(); return; }
+
+  const known = Object.keys(state.scores)
+    .filter(n => n.toLowerCase().startsWith(val) && n !== state.winner && n !== state.challenger && !state.queue.includes(n));
+
+  if (!known.length) { hideAutocomplete(); return; }
+
+  list.innerHTML = known.slice(0, 5).map(n =>
+    `<div class="ac-item" data-name="${escapeHtml(n)}" onmousedown="pickAC('${n.replace(/'/g,"\\'")}')">
+       <span class="ac-icon">⏱</span>${escapeHtml(n)}
+     </div>`
+  ).join('');
+  list.classList.add('open');
+}
+
+function pickAC(name) {
+  $('nameInput').value = name;
+  hideAutocomplete();
+  addPlayer();
+}
+
+function hideAutocomplete() {
+  $('autoList').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════════════ */
+function renderAll() {
+  renderMatch();
+  renderQueue();
+  renderLeaderboard();
+  renderTV();
+}
+
+function renderMatch() {
+  const hasMatch = state.winner && state.challenger;
+
+  /* Names */
+  $('champName').textContent = state.winner     || '—';
+  $('chalName').textContent  = state.challenger || '—';
+
+  /* Empty slot style */
+  $('champSlot').classList.toggle('empty', !state.winner);
+  $('chalSlot').classList.toggle('empty',  !state.challenger);
+
+  /* Stats */
+  if (state.winner && state.scores[state.winner]) {
+    const s = state.scores[state.winner];
+    $('champStat').textContent = `${s.wins}W · ${s.played}G`;
+  } else { $('champStat').textContent = ''; }
+
+  if (state.challenger && state.scores[state.challenger]) {
+    const s = state.scores[state.challenger];
+    $('chalStat').textContent = `${s.wins}W · ${s.played}G`;
+  } else { $('chalStat').textContent = ''; }
+
+  /* Buttons */
+  $('matchActions').style.display = hasMatch ? '' : 'none';
+  $('idleMsg').style.display = (!state.winner && !state.challenger) ? '' : 'none';
+
+  /* Streak bar */
+  const streak = state.streak || 0;
+  if (streak >= 2 && state.winner) {
+    $('streakText').textContent = `${state.winner} is on a ${streak}-game streak`;
+    $('streakBar').classList.add('on');
+  } else {
+    $('streakBar').classList.remove('on');
+  }
+}
+
+function renderQueue() {
+  const list = $('queueList');
+  list.innerHTML = '';
+
+  if (!state.queue.length) {
+    list.innerHTML = '<div class="q-empty">Queue is empty</div>';
+    $('queueCount').textContent = '0';
+    return;
+  }
+  $('queueCount').textContent = state.queue.length;
+
+  state.queue.forEach((name, i) => {
+    const safe  = escapeHtml(name);
+    const jsN   = name.replace(/'/g, "\\'");
+    const posClass = i === 0 ? 'next' : i === 1 ? 'soon' : '';
+    const waitNote = i === 0 ? 'Up next' : `~${i + 1} games`;
+    const div = document.createElement('div');
+    div.className = 'q-item';
+    div.innerHTML = `
+      <div class="q-pos ${posClass}">${i + 1}</div>
+      <div class="q-name">${safe}</div>
+      <div class="q-wait">${waitNote}</div>
+      <div class="q-btns">
+        ${adminUnlocked ? `<button class="q-btn up" onclick="bumpToTop('${jsN}')" title="Move to top">▲</button>` : ''}
+        <button class="q-btn rm" onclick="removePlayer('${jsN}')" title="Remove">✕</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function renderLeaderboard() {
+  const list = $('lbList');
+  list.innerHTML = '';
+
+  const items = Object.keys(state.scores)
+    .map(n => ({ name: n, wins: state.scores[n].wins || 0, played: state.scores[n].played || 0 }))
+    .sort((a, b) => b.wins - a.wins);
+
+  if (!items.length) {
+    list.innerHTML = '<div class="q-empty">No scores yet</div>';
+  } else {
+    const rankClass = ['r1', 'r2', 'r3'];
+    items.forEach((it, i) => {
+      const ratio = it.played ? Math.round((it.wins / it.played) * 100) + '%' : '—';
+      const safe  = escapeHtml(it.name);
+      const jsN   = it.name.replace(/'/g, "\\'");
+      const div   = document.createElement('div');
+      div.className = 'lb-item' + (i === 0 ? ' lb-top' : '');
+      div.innerHTML = `
+        <div class="lb-rank ${rankClass[i] || ''}">${i + 1}</div>
+        <div class="lb-name">${safe}</div>
+        <div class="lb-ratio">${ratio}</div>
+        <div style="display:flex;align-items:baseline;gap:3px">
+          <div class="lb-wins" id="wins-${safe}">${it.wins}</div>
+          <div class="lb-wins-lbl">W</div>
+        </div>
+        ${adminUnlocked ? `<button class="lb-edit-btn" onclick="editScore('${jsN}')" title="Edit wins">✎</button>` : ''}
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  /* Admin footer buttons */
+  const bar = $('lbAdminBar');
+  bar.innerHTML = '';
+  if (adminUnlocked) {
+    bar.innerHTML = `
+      <button class="btn btn-ghost btn-sm" onclick="exportTXT()">Export</button>
+      <button class="btn btn-danger btn-sm" onclick="$('confirmOverlay').hidden=false">Clear All</button>
+    `;
+    bar.querySelectorAll('button').forEach(b => {
+      b.style.cssText = 'padding:6px 10px;font-size:11px;font-weight:700;border-radius:6px;';
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INLINE SCORE EDIT
+═══════════════════════════════════════════════════════════ */
+function editScoreInline(name) {
+  if (!adminUnlocked) { toast('Locked', 'Unlock admin to edit scores', 'error'); return; }
+  const safe = escapeHtml(name);
+  const cell = document.querySelector(`#wins-${safe}`);
+  if (!cell) return;
+  const cur  = state.scores[name]?.wins || 0;
+  const inp  = document.createElement('input');
+  inp.type  = 'number'; inp.className = 'lb-score-input';
+  inp.value = cur; inp.min = '0'; inp.max = '999';
+  cell.replaceWith(inp);
+  inp.focus(); inp.select();
+
+  function commit() {
+    const n = parseInt(inp.value);
+    if (!isNaN(n) && n >= 0) {
+      ensureScores(name);
+      state.scores[name].wins = n;
+      writeState();
+    }
+    renderLeaderboard();
+  }
+  inp.addEventListener('blur',    commit);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { inp.blur(); } if (e.key === 'Escape') renderLeaderboard(); });
+}
+
+/* alias */
+function editScore(name) { editScoreInline(name); }
+
+/* ═══════════════════════════════════════════════════════════
+   TV MODE
+═══════════════════════════════════════════════════════════ */
+let tvClockInterval = null;
+
+function openTV() {
+  $('tvMode').hidden = false;
+  renderTV();
+  tvClockInterval = setInterval(updateTVClock, 1000);
+  updateTVClock();
+  if (document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+function closeTV() {
+  $('tvMode').hidden = true;
+  clearInterval(tvClockInterval);
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else document.documentElement.requestFullscreen().catch(() => {});
+}
+function updateTVClock() {
+  const now = new Date();
+  $('tvClock').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+function renderTV() {
+  $('tvChampName').textContent = state.winner     || '—';
+  $('tvChalName').textContent  = state.challenger || '—';
+
+  if (state.winner && state.scores[state.winner]) {
+    const s = state.scores[state.winner];
+    $('tvChampStat').textContent = `${s.wins} wins`;
+  } else { $('tvChampStat').textContent = ''; }
+
+  if (state.challenger && state.scores[state.challenger]) {
+    const s = state.scores[state.challenger];
+    $('tvChalStat').textContent = `${s.wins} wins`;
+  } else { $('tvChalStat').textContent = ''; }
+
+  const streak = state.streak || 0;
+  const tvS = $('tvStreak');
+  if (streak >= 2 && state.winner) {
+    tvS.textContent = `🔥 ${state.winner} on a ${streak}-game streak`;
+    tvS.classList.add('on');
+  } else { tvS.classList.remove('on'); }
+
+  const q = state.queue.slice(0, 5);
+  if (q.length) {
+    $('tvQueue').textContent = 'Up next: ' + q.join(' → ');
+  } else { $('tvQueue').textContent = ''; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN
+═══════════════════════════════════════════════════════════ */
+function openAdmin() {
+  $('adminOverlay').hidden = false;
+  renderAdminContent();
+}
+function hideAdmin() {
+  $('adminOverlay').hidden = true;
+}
+function renderAdminContent() {
+  const content = $('adminContent');
+  const sub     = $('adminSub');
+
+  if (!adminUnlocked) {
+    sub.textContent = 'Enter passkey to unlock controls.';
+    content.innerHTML = `
+      <input type="password" id="passkeyInput" placeholder="Passkey" style="width:100%;margin-bottom:10px" autocomplete="current-password">
+      <div id="passkeyErr" style="color:#D95050;font-size:12px;display:none;margin-bottom:8px">Incorrect passkey</div>
+      <button class="btn btn-gold" style="width:100%;padding:13px;font-size:14px" onclick="tryPasskey()">Unlock</button>
+    `;
+    content.querySelector('#passkeyInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') tryPasskey();
+    });
+    setTimeout(() => content.querySelector('#passkeyInput')?.focus(), 50);
+  } else {
+    sub.textContent = 'Admin unlocked for this session.';
+    content.innerHTML = `
+      <div class="sheet-grid">
+        <button class="btn btn-gold"   style="padding:13px;font-size:13px" onclick="exportTXT(); hideAdmin()">📤 Export</button>
+        <button class="btn btn-danger" style="padding:13px;font-size:13px" onclick="hideAdmin(); $('confirmOverlay').hidden=false">🗑 Clear All</button>
+      </div>
+      <div class="sep" style="margin:14px 0"></div>
+      <div style="font-size:12px;color:var(--text-muted)">Session: ${sessionId}</div>
+    `;
+  }
+}
+
+function tryPasskey() {
+  const val = $('passkeyInput')?.value || '';
+  if (val.toLowerCase() === SETTINGS_PASSKEY) {
+    adminUnlocked = true;
+    $('adminBtn').classList.add('unlocked');
+    hideAdmin();
+    toast('Admin unlocked', 'You can now edit scores and clear sessions', 'info');
+    renderAll();
+  } else {
+    const err = $('passkeyErr');
+    if (err) { err.style.display = 'block'; }
+    if ($('passkeyInput')) { $('passkeyInput').value = ''; $('passkeyInput').focus(); }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CLEAR ALL
+═══════════════════════════════════════════════════════════ */
+function doClearAll() {
+  state = { winner: null, challenger: null, queue: [], scores: {}, streak: 0 };
+  lastState = null;
+  writeState(); renderAll();
+  toast('Session cleared', 'Queue and scores reset', 'info');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATUS BADGE
+═══════════════════════════════════════════════════════════ */
+function setBadge(online) {
+  $('statusDot').className = 'status-dot' + (online ? ' online' : '');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PERSISTENCE
+═══════════════════════════════════════════════════════════ */
+async function writeState() {
+  if (isRemote && supa) {
+    try {
+      await supa.from('sessions').update({ state }).eq('id', sessionId);
+    } catch (e) {
+      console.warn('Remote write failed', e);
+      setBadge(false); isRemote = false; saveLocal();
+    }
+  } else { saveLocal(); }
+}
+function saveLocal() {
+  localStorage.setItem('pub_pool_state_' + sessionId, JSON.stringify({ state, clients }));
+}
+function loadLocal() {
+  const raw = localStorage.getItem('pub_pool_state_' + sessionId);
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw);
+    state   = parsed.state   || state;
+    clients = parsed.clients || [];
+  } catch (e) {}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SUPABASE
+═══════════════════════════════════════════════════════════ */
+async function ensureSessionOnServer() {
+  const res = await supa.from('sessions').select('*').eq('id', sessionId).single();
+  if (res.error || !res.data) {
+    await supa.from('sessions').upsert({ id: sessionId, date: new Date().toISOString().slice(0, 10), state, clients: [] });
+    clients = []; isRemote = true; return;
+  }
+  state   = res.data.state   || state;
+  clients = res.data.clients || [];
+  // Migrate: ensure streak exists
+  if (state.streak === undefined) state.streak = 0;
+  isRemote = true;
+}
+
+async function joinSession() {
+  if (!supa) return;
+  try {
+    const res = await supa.from('sessions').select('*').eq('id', sessionId).single();
+    if (res?.data) clients = res.data.clients || [];
+  } catch (e) {}
+  pruneClients();
+  const idx = clients.findIndex(c => c.id === clientId);
+  if (idx >= 0) clients[idx].lastSeen = Date.now();
+  else clients.push({ id: clientId, lastSeen: Date.now() });
+  if (isRemote) {
+    try { await supa.from('sessions').update({ clients }).eq('id', sessionId); } catch (e) {}
+  }
+}
+
+function pruneClients() {
+  clients = clients.filter(c => Date.now() - c.lastSeen < CLIENT_TIMEOUT_MS);
+}
+
+let sessionSub = null;
+let connectionAttempt = 0;
+
+function startPollingRemote() {
+  if (sessionSub) supa.removeSubscription(sessionSub);
+
+  // 1. Setup with explicit error handling for the socket
+  sessionSub = supa
+    .from('sessions')
+    .on('*', payload => {
+      if (payload.new && payload.new.id === sessionId) {
+        state = payload.new.state || state;
+        renderAll();
+        setBadge(true);
+        isRemote = true;
+      }
+    })
+    .subscribe((status, err) => {
+      if (status === 'SUBSCRIBED') {
+        console.log("Realtime Connected");
+        connectionAttempt = 0;
+      }
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.warn("Realtime error, attempting soft reset...");
+        // If we hit a snag, trigger a silent re-sub after 5 seconds
+        setTimeout(() => startPollingRemote(), 5000);
+      }
+    });
+
+  // 2. Fallback Polling (Now significantly slower to avoid resource contention)
+  clearInterval(pollingInterval);
+  pollingInterval = setInterval(async () => {
+    try {
+      const { data, error } = await supa
+        .from('sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        state = data.state || state;
+        renderAll();
+        setBadge(true);
+        isRemote = true;
+      }
+    } catch (e) {
+      // Don't kill the app logic, just mark as degraded
+      setBadge(false);
+      console.warn("Polling fallback failed, retrying in 20s...");
+    }
+  }, 12000); // Increased to 20s to ensure we aren't hitting rate limits
+}
+
+function startHeartbeatRemote() {
+  heartbeatInterval && clearInterval(heartbeatInterval);
+  heartbeatInterval = setInterval(async () => {
+    pruneClients();
+    const idx = clients.findIndex(c => c.id === clientId);
+    if (idx >= 0) clients[idx].lastSeen = Date.now();
+    else clients.push({ id: clientId, lastSeen: Date.now() });
+    if (isRemote) {
+      try { await supa.from('sessions').update({ clients }).eq('id', sessionId); setBadge(true); }
+      catch (e) { setBadge(false); isRemote = false; }
+    }
+  }, HEARTBEAT_MS);
+}
+
+function startHeartbeatLocal() {
+  heartbeatInterval && clearInterval(heartbeatInterval);
+  heartbeatInterval = setInterval(() => {
+    pruneClients();
+    const idx = clients.findIndex(c => c.id === clientId);
+    if (idx >= 0) clients[idx].lastSeen = Date.now();
+    else clients.push({ id: clientId, lastSeen: Date.now() });
+    saveLocal();
+  }, HEARTBEAT_MS);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT
+═══════════════════════════════════════════════════════════ */
+function exportTXT() {
+  const date  = new Date().toISOString().slice(0, 10);
+  const items = Object.keys(state.scores)
+    .map(n => ({ name: n, wins: state.scores[n].wins || 0, played: state.scores[n].played || 0 }))
+    .sort((a, b) => b.wins - a.wins);
+  const lines = [
+    `Pub: ${PUB_NAME}`, `Date: ${date}`, '',
+    '=== LEADERBOARD ===',
+    ...items.map((it, i) => `${i + 1}. ${it.name} — ${it.wins} wins / ${it.played} games`),
+    '', '=== CURRENT MATCH ===',
+    `Champion:   ${state.winner     || '—'}`,
+    `Challenger: ${state.challenger || '—'}`,
+    `Streak:     ${state.streak || 0}`,
+    '', '=== QUEUE ===',
+    ...(state.queue.length ? state.queue.map((n, i) => `${i + 1}. ${n}`) : ['(empty)'])
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `weaver-pool-${date}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Exported', `weaver-pool-${date}.txt`, 'info');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SNOW (December only)
+═══════════════════════════════════════════════════════════ */
+function initSnow() {
+  const canvas = $('snowCanvas');
+  const ctx    = canvas.getContext('2d');
+  canvas.style.display = 'block';
+  let enabled = true;
+  let flakes  = [];
+
+  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+  window.addEventListener('resize', resize); resize();
+
+  class Flake {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * -canvas.height;
+      this.r = Math.random() * 3 + 1;
+      this.vy = Math.random() * 1 + 0.4;
+      this.vx = Math.random() * 0.8 - 0.4;
+      this.o  = Math.random() * 0.7 + 0.2;
+    }
+    update() {
+      this.y += this.vy; this.x += this.vx + Math.sin(this.y / 50) * 0.4;
+      if (this.y > canvas.height) this.reset();
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,210,255,${this.o})`;
+      ctx.fill();
+    }
+  }
+  for (let i = 0; i < 180; i++) flakes.push(new Flake());
+
+  function animate() {
+    if (!enabled) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    flakes.forEach(f => { f.update(); f.draw(); });
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  /* Optional: add a small toggle button to header */
+  const snowBtn = document.createElement('button');
+  snowBtn.className = 'icon-btn'; snowBtn.textContent = '❄️'; snowBtn.title = 'Toggle snow';
+  snowBtn.addEventListener('click', () => {
+    enabled = !enabled;
+    snowBtn.textContent = enabled ? '❄️' : '⛅';
+    if (enabled) { canvas.style.display = 'block'; animate(); }
+    else { ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.style.display = 'none'; }
+  });
+  $('adminBtn').before(snowBtn);
+}
+</script>
+</body>
+</html>
