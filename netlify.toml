@@ -1,12 +1,13 @@
 
-#Consolidate Root
+# Consolidate Root (old, disabled)
 #[[redirects]]
 #  from = "/*"
 #  to = "/index.html"
 #  status = 200
 
-#Pub Not found
+# Route all pub URLs to the single master app
 [[redirects]]
-from = "/pubs/*"
-to = "/pubs/404.html"
-status = 404
+  from = "/pubs/*"
+  to = "/app/index.html"
+  status = 200
+
