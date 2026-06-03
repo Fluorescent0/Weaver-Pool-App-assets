@@ -1,1 +1,7 @@
+# 1. Pub URLs (URLs start with /pubs/)
+# Sends any request to /pubs/anything to your app file
 /pubs/* /app/index.html    200
+
+# 2. Everything else
+# Sends all other requests (like /) to the root index.html
+/* /index.html        200
