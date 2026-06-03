@@ -2,972 +2,1792 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WhosOnNext — Pool Night, Sorted</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>The Weaver — Pool</title>
+<link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Fluorescent0/Weaver-Pool-App-assets/refs/heads/main/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Fluorescent0/Weaver-Pool-App-assets/refs/heads/main/WON_favicon.ico">
 <style>
-/* ─── RESET & ROOT ─────────────────────────────────────────── */
+/* ─── RESET & ROOT ─────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg:          #09090C;
-  --surface:     #111318;
-  --surface-2:   #181C26;
-  --surface-3:   #1E2330;
-  --border:      rgba(255,255,255,0.06);
-  --border-hi:   rgba(255,255,255,0.11);
+  --bg:           #09090C;
+  --surface:      #111318;
+  --surface-2:    #181C26;
+  --surface-3:    #1E2330;
+  --border:       rgba(255,255,255,0.06);
+  --border-soft:  rgba(255,255,255,0.03);
+  --border-hi:    rgba(255,255,255,0.11);
 
-  --gold:        #D4A441;
-  --gold-lt:     #EEC060;
-  --gold-dim:    rgba(212,164,65,0.10);
-  --gold-glow:   rgba(212,164,65,0.18);
+  --gold:         #D4A441;
+  --gold-lt:      #EEC060;
+  --gold-dim:     rgba(212,164,65,0.10);
+  --gold-glow:    rgba(212,164,65,0.22);
 
-  --green:       #27B86A;
-  --green-dim:   rgba(39,184,106,0.08);
-  --green-felt:  #1A4731;
+  --red:          #D95050;
+  --red-lt:       #F07070;
+  --red-dim:      rgba(217,80,80,0.10);
 
-  --text:        #EDE9E0;
-  --text-muted:  #6B7280;
-  --text-dim:    #353A48;
+  --green:        #27B86A;
+  --green-dim:    rgba(39,184,106,0.10);
+
+  --text:         #EDE9E0;
+  --text-muted:   #6B7280;
+  --text-dim:     #353A48;
 
   --r:    14px;
   --r-sm: 9px;
+  --r-xs: 5px;
 
   font-family: 'Outfit', system-ui, sans-serif;
   color-scheme: dark;
 }
-html { scroll-behavior: smooth; }
-body {
+html, body {
+  min-height: 100%;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overscroll-behavior: none;
 }
 
-/* ─── NOISE TEXTURE OVERLAY ────────────────────────────────── */
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  opacity: 0.4;
+/* ─── CANVAS LAYERS ────────────────────────────────────── */
+#snowCanvas {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 1;
+  display: none;
+}
+#particles {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 99;
 }
 
-/* ─── NAV ──────────────────────────────────────────────────── */
-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  height: 56px;
-  background: rgba(9,9,12,0.82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-}
-.nav-brand {
-  display: flex; align-items: center; gap: 9px;
-  text-decoration: none;
-}
-.nav-icon { font-size: 20px; }
-.nav-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px; letter-spacing: 2px;
-  color: var(--text);
-}
-.nav-cta {
-  background: var(--gold);
-  color: #0D0800;
-  font-weight: 700; font-size: 13px;
-  padding: 8px 18px;
-  border-radius: var(--r-sm);
-  border: none; cursor: pointer;
-  text-decoration: none;
-  transition: filter .15s, transform .12s;
-  letter-spacing: 0.2px;
-}
-.nav-cta:hover { filter: brightness(1.1); }
-.nav-cta:active { transform: scale(0.95); }
-
-/* ─── HERO ─────────────────────────────────────────────────── */
-.hero {
-  position: relative; z-index: 1;
-  min-height: 100svh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center;
-  padding: 100px 24px 80px;
-  overflow: hidden;
-}
-
-/* Felt table glow */
-.hero::before {
-  content: '';
-  position: absolute;
-  width: 700px; height: 700px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(26,71,49,0.35) 0%, transparent 70%);
-  top: 50%; left: 50%;
-  transform: translate(-50%, -55%);
-  pointer-events: none;
-}
-/* Gold accent glow */
-.hero::after {
-  content: '';
-  position: absolute;
-  width: 500px; height: 300px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(212,164,65,0.08) 0%, transparent 70%);
-  bottom: 10%; left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 7px;
-  background: var(--gold-dim);
-  border: 1px solid rgba(212,164,65,0.2);
-  border-radius: 999px;
-  padding: 5px 14px;
-  font-size: 11px; font-weight: 700;
-  letter-spacing: 2.5px; text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 28px;
-  animation: fadeUp .6s ease-out both;
-}
-.eyebrow-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.hero-heading {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(64px, 16vw, 130px);
-  line-height: 0.92;
-  letter-spacing: 1px;
-  color: var(--text);
-  margin-bottom: 12px;
-  animation: fadeUp .6s .1s ease-out both;
-}
-.hero-heading em {
-  font-style: normal;
-  color: var(--gold-lt);
-}
-
-.hero-sub {
-  font-size: clamp(15px, 2.5vw, 19px);
-  color: var(--text-muted);
-  font-weight: 400;
+/* ─── APP WRAPPER ──────────────────────────────────────── */
+.app {
   max-width: 480px;
-  line-height: 1.6;
-  margin-bottom: 40px;
-  animation: fadeUp .6s .2s ease-out both;
+  margin: 0 auto;
+  padding-bottom: 60px;
+  position: relative; z-index: 2;
 }
 
-.hero-btns {
-  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
-  animation: fadeUp .6s .3s ease-out both;
-}
-.btn-primary {
-  background: linear-gradient(135deg, #B8892B, #D4A441, #EEC060);
-  color: #0D0800;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700; font-size: 15px;
-  padding: 14px 28px;
-  border-radius: var(--r-sm);
-  border: none; cursor: pointer;
-  text-decoration: none;
-  display: inline-flex; align-items: center; gap: 7px;
-  transition: filter .15s, transform .12s;
-  letter-spacing: 0.1px;
-}
-.btn-primary:hover { filter: brightness(1.08); }
-.btn-primary:active { transform: scale(0.96); }
-
-.btn-secondary {
-  background: transparent;
-  color: var(--text-muted);
-  font-family: 'Outfit', sans-serif;
-  font-weight: 600; font-size: 15px;
-  padding: 14px 28px;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--border-hi);
-  cursor: pointer; text-decoration: none;
-  display: inline-flex; align-items: center; gap: 7px;
-  transition: color .15s, border-color .15s;
-}
-.btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
-
-/* ─── MOCK APP PREVIEW ─────────────────────────────────────── */
-.hero-preview {
-  position: relative; z-index: 1;
-  margin-top: 64px;
-  width: 100%; max-width: 340px;
-  animation: fadeUp .7s .4s ease-out both;
-}
-.phone-frame {
-  background: var(--surface);
-  border: 1px solid var(--border-hi);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.04),
-    0 40px 80px rgba(0,0,0,0.6),
-    0 0 60px rgba(212,164,65,0.06);
-}
-.phone-bar {
-  height: 44px;
-  background: rgba(9,9,12,0.9);
+/* ─── HEADER ───────────────────────────────────────────── */
+.header {
+  position: sticky; top: 0; z-index: 50;
+  height: 54px;
+  background: rgba(9,9,12,0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center;
   justify-content: space-between;
   padding: 0 14px;
 }
-.phone-brand {
+.brand {
+  display: flex; align-items: center; gap: 9px;
+}
+.brand-icon { font-size: 20px; line-height: 1; }
+.brand-name {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px; letter-spacing: 1.5px;
+  font-size: 21px; letter-spacing: 1.8px;
+  color: var(--text);
 }
-.phone-dot {
+.header-right {
+  display: flex; align-items: center; gap: 8px;
+}
+.status-dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
+  background: var(--red); flex-shrink: 0;
+  transition: background 0.3s;
+  box-shadow: 0 0 6px currentColor;
 }
-.phone-body { padding: 14px; }
-.mock-match {
-  background: radial-gradient(ellipse 80% 55% at 50% -5%, rgba(20,75,42,0.22) 0%, transparent 70%), var(--surface-2);
-  border: 1px solid var(--border-hi);
+.status-dot.online { background: var(--green); }
+.status-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.icon-btn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted); font-size: 15px;
+  cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: background .15s, color .15s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.icon-btn:active { transform: scale(0.91); }
+.icon-btn:hover  { background: var(--surface-2); color: var(--text); }
+.icon-btn.unlocked { color: var(--gold); border-color: var(--gold-dim); }
+
+/* ─── MAIN CONTENT ─────────────────────────────────────── */
+main {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.col-left, .col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─── MATCH CARD ───────────────────────────────────────── */
+.match-card {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% -5%, rgba(20,75,42,0.22) 0%, transparent 70%),
+    var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--r);
-  padding: 16px;
-  margin-bottom: 10px;
-  position: relative;
   overflow: hidden;
+  position: relative;
 }
-.mock-match::after {
+/* Gold top rule */
+.match-card::after {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; height: 2px;
   background: linear-gradient(90deg, transparent 0%, var(--gold) 40%, var(--gold-lt) 60%, transparent 100%);
-  opacity: 0.6;
+  opacity: 0.55;
 }
-.mock-streak {
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 6px;
-  background: linear-gradient(90deg, transparent, rgba(212,164,65,0.08), transparent);
-  border-bottom: 1px solid rgba(212,164,65,0.1);
-  font-size: 11px; font-weight: 600; color: var(--gold);
-  margin: -16px -16px 14px;
+
+/* Streak banner */
+.streak-bar {
+  display: none;
+  align-items: center; justify-content: center;
+  gap: 7px;
+  padding: 8px 16px;
+  background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  border-bottom: 1px solid rgba(212,164,65,0.12);
+  font-size: 12px; font-weight: 600;
+  color: var(--gold); letter-spacing: 0.3px;
 }
-.mock-player {
-  text-align: center; padding: 10px 6px;
-  border-radius: 8px; margin-bottom: 6px;
+.streak-bar.on { display: flex; }
+.streak-fire { font-size: 15px; }
+
+/* Player slots */
+.match-body { padding: 20px 20px 16px; }
+
+.player-slots { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+
+.p-slot {
+  border-radius: var(--r-sm);
+  padding: 14px 14px 12px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 2px;
+  transition: background .3s, border-color .3s;
+  position: relative;
 }
-.mock-player.champ {
-  background: rgba(212,164,65,0.08);
-  border: 1px solid rgba(212,164,65,0.15);
+.p-slot.champ {
+  background: var(--gold-dim);
+  border: 1px solid rgba(212,164,65,0.18);
 }
-.mock-player.chal {
+.p-slot.chal {
   background: rgba(255,255,255,0.02);
   border: 1px solid var(--border);
 }
-.mock-role {
-  font-size: 8px; font-weight: 700;
+.p-slot.empty { opacity: 0.45; }
+
+.p-label {
+  font-size: 9px; font-weight: 700;
   letter-spacing: 3px; text-transform: uppercase;
-  margin-bottom: 2px;
 }
-.mock-player.champ .mock-role { color: var(--gold); }
-.mock-player.chal  .mock-role { color: var(--text-muted); }
-.mock-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 36px; line-height: 1;
-}
-.mock-player.champ .mock-name { color: var(--gold-lt); }
-.mock-player.chal  .mock-name { color: var(--text); }
-.mock-vs {
-  text-align: center;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 13px; letter-spacing: 4px;
-  color: var(--text-dim); padding: 4px 0;
-}
-.mock-btns { display: flex; gap: 6px; margin-top: 12px; }
-.mock-btn {
-  flex: 1; padding: 11px 6px;
-  border-radius: 7px;
-  font-size: 11px; font-weight: 700; text-align: center;
-}
-.mock-btn.gold { background: linear-gradient(135deg, #B8892B, #EEC060); color: #0D0800; }
-.mock-btn.red  { background: linear-gradient(135deg, #A03333, #F07070); color: #fff; }
+.p-slot.champ .p-label { color: var(--gold); }
+.p-slot.chal  .p-label { color: var(--text-muted); }
 
-.mock-queue {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 12px;
-}
-.mock-q-title {
-  font-size: 10px; font-weight: 600; color: var(--text-muted);
-  letter-spacing: 0.3px; margin-bottom: 8px;
-  display: flex; justify-content: space-between; align-items: center;
-}
-.mock-q-badge {
-  background: var(--surface-3); border: 1px solid var(--border);
-  border-radius: 999px; font-size: 9px; font-weight: 700;
-  color: var(--text-muted); padding: 1px 7px;
-}
-.mock-q-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 8px;
-  background: var(--surface-3);
-  border-radius: 6px; margin-bottom: 4px;
-  font-size: 12px;
-}
-.mock-q-item:last-child { margin-bottom: 0; }
-.mock-q-num {
+.p-name {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 16px; color: var(--text-dim); width: 14px;
+  font-size: clamp(46px, 13vw, 64px);
+  line-height: 1; text-align: center;
+  letter-spacing: 0.5px;
+  transition: transform .25s, opacity .25s;
+  word-break: break-word;
 }
-.mock-q-num.next { color: var(--gold); }
+.p-slot.champ .p-name { color: var(--gold-lt); }
+.p-slot.chal  .p-name { color: var(--text); }
 
-/* ─── SECTION BASE ─────────────────────────────────────────── */
-section {
-  position: relative; z-index: 1;
-  padding: 80px 24px;
-  max-width: 960px;
-  margin: 0 auto;
-}
-.section-eyebrow {
-  font-size: 11px; font-weight: 700;
-  letter-spacing: 2.5px; text-transform: uppercase;
-  color: var(--gold); margin-bottom: 14px;
-}
-.section-heading {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(40px, 8vw, 68px);
-  line-height: 1;
-  color: var(--text);
-  margin-bottom: 14px;
-}
-.section-sub {
-  font-size: 16px; color: var(--text-muted);
-  line-height: 1.65; max-width: 520px;
+.p-stat {
+  font-size: 11px; color: var(--text-muted);
+  font-weight: 500; min-height: 16px;
 }
 
-/* ─── FEATURES ─────────────────────────────────────────────── */
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 12px;
-  margin-top: 48px;
+/* VS row */
+.vs-row {
+  display: flex; align-items: center; gap: 10px;
 }
-.feat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 24px;
-  transition: border-color .2s, transform .2s;
+.vs-line { flex: 1; height: 1px; background: var(--border); }
+.vs-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px; letter-spacing: 4px;
+  color: var(--text-dim);
+}
+
+/* Idle state */
+.idle-msg {
+  text-align: center; padding: 10px;
+  font-size: 13px; color: var(--text-muted);
+}
+
+/* ─── ACTION BUTTONS ───────────────────────────────────── */
+.actions { display: flex; flex-direction: column; gap: 8px; }
+.actions-pair { display: flex; gap: 8px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 7px; border: 0; border-radius: var(--r-sm);
+  font-family: 'Outfit', sans-serif; font-weight: 700;
+  cursor: pointer; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .12s, filter .12s;
   position: relative; overflow: hidden;
 }
-.feat-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,164,65,0.3), transparent);
-  opacity: 0;
-  transition: opacity .2s;
-}
-.feat-card:hover {
-  border-color: var(--border-hi);
-  transform: translateY(-2px);
-}
-.feat-card:hover::before { opacity: 1; }
+.btn:active { transform: scale(0.95); filter: brightness(0.88); }
+.btn:disabled { opacity: 0.3; pointer-events: none; }
 
-.feat-icon {
-  font-size: 26px; margin-bottom: 14px;
-  display: block;
-}
-.feat-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px; letter-spacing: 0.5px;
-  color: var(--text); margin-bottom: 8px;
-}
-.feat-desc {
-  font-size: 14px; color: var(--text-muted);
-  line-height: 1.6;
-}
-
-/* ─── HOW IT WORKS ─────────────────────────────────────────── */
-.how-section {
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.how-section-inner {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 80px 24px;
-}
-.steps {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0;
-  margin-top: 52px;
-  position: relative;
-}
-.steps::before {
-  content: '';
-  position: absolute;
-  top: 26px; left: calc(16.6% + 12px); right: calc(16.6% + 12px);
-  height: 1px;
-  background: linear-gradient(90deg, var(--gold-dim), rgba(212,164,65,0.2), var(--gold-dim));
-  display: none;
-}
-@media (min-width: 700px) { .steps::before { display: block; } }
-
-.step {
-  display: flex; flex-direction: column;
-  align-items: center; text-align: center;
-  padding: 0 20px 0;
-}
-.step-num {
-  width: 52px; height: 52px;
-  border-radius: 50%;
-  background: var(--surface-2);
-  border: 1px solid rgba(212,164,65,0.2);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px; color: var(--gold);
-  margin-bottom: 18px;
-  flex-shrink: 0;
-  position: relative; z-index: 1;
-  box-shadow: 0 0 20px var(--gold-dim);
-}
-.step-title {
-  font-weight: 700; font-size: 15px;
-  color: var(--text); margin-bottom: 8px;
-}
-.step-desc {
-  font-size: 13px; color: var(--text-muted);
-  line-height: 1.6;
-}
-
-/* ─── PRICING ──────────────────────────────────────────────── */
-.pricing-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 12px;
-  margin-top: 48px;
-  max-width: 700px;
-}
-.price-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 28px 24px;
-  position: relative; overflow: hidden;
-}
-.price-card.featured {
-  background: linear-gradient(145deg, var(--surface-2), var(--surface));
-  border-color: rgba(212,164,65,0.25);
-}
-.price-card.featured::after {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--gold), var(--gold-lt), transparent);
-}
-.price-badge {
-  display: inline-block;
-  background: var(--gold-dim);
-  border: 1px solid rgba(212,164,65,0.2);
-  color: var(--gold);
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 2px; text-transform: uppercase;
-  padding: 3px 10px; border-radius: 999px;
-  margin-bottom: 16px;
-}
-.price-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px; letter-spacing: 1px;
-  color: var(--text); margin-bottom: 6px;
-}
-.price-amount {
-  display: flex; align-items: flex-end; gap: 4px;
-  margin-bottom: 6px;
-}
-.price-num {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 52px; line-height: 1;
-  color: var(--gold-lt);
-}
-.price-period {
-  font-size: 13px; color: var(--text-muted);
-  padding-bottom: 8px; font-weight: 500;
-}
-.price-desc {
-  font-size: 13px; color: var(--text-muted);
-  margin-bottom: 20px; line-height: 1.5;
-}
-.price-feats {
-  list-style: none; display: flex; flex-direction: column; gap: 8px;
-  margin-bottom: 24px;
-}
-.price-feats li {
-  display: flex; align-items: center; gap: 9px;
-  font-size: 13px; color: var(--text-muted);
-}
-.price-feats li::before {
-  content: '✓';
-  color: var(--green); font-weight: 700; font-size: 12px;
-  flex-shrink: 0;
-}
-.price-btn {
-  width: 100%; padding: 13px;
-  border-radius: var(--r-sm); border: none;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700; font-size: 14px;
-  cursor: pointer; text-decoration: none;
-  display: block; text-align: center;
-  transition: filter .15s, transform .12s;
-}
-.price-btn.gold {
+.btn-champ {
+  flex: 1; padding: 17px 12px; font-size: 14px;
   background: linear-gradient(135deg, #B8892B, #D4A441, #EEC060);
   color: #0D0800;
+  letter-spacing: 0.1px;
 }
-.price-btn.ghost {
-  background: transparent; color: var(--text-muted);
-  border: 1px solid var(--border-hi);
+.btn-chal {
+  flex: 1; padding: 17px 12px; font-size: 14px;
+  background: linear-gradient(135deg, #A03333, #D95050, #F07070);
+  color: #fff;
+  letter-spacing: 0.1px;
 }
-.price-btn:hover { filter: brightness(1.1); }
-.price-btn:active { transform: scale(0.97); }
-
-/* ─── SIGN UP SECTION ──────────────────────────────────────── */
-.signup-section {
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.signup-inner {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 80px 24px;
-}
-.signup-inner .section-heading { text-align: center; }
-.signup-inner .section-sub { text-align: center; margin: 0 auto 40px; }
-
-.signup-form {
-  display: flex; flex-direction: column; gap: 12px;
-}
-.form-row { display: flex; gap: 12px; }
-@media (max-width: 500px) { .form-row { flex-direction: column; } }
-
-.form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
-.form-label {
-  font-size: 11px; font-weight: 700;
-  letter-spacing: 1.5px; text-transform: uppercase;
+.skip-link {
+  display: block; width: 100%;
+  padding: 9px; text-align: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px; font-weight: 500;
   color: var(--text-muted);
+  background: none; border: none;
+  cursor: pointer; letter-spacing: 0.1px;
+  transition: color .15s;
+  -webkit-tap-highlight-color: transparent;
 }
-.form-input {
-  height: 50px;
+.skip-link:hover, .skip-link:active { color: var(--text); }
+
+.btn-add {
+  padding: 0 22px; height: 52px; font-size: 15px; flex-shrink: 0;
+  background: linear-gradient(135deg, #1A7A48, #27B86A);
+  color: #fff; white-space: nowrap;
+}
+
+.btn-ghost {
+  padding: 9px 14px; font-size: 13px; font-weight: 600;
+  background: transparent; color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--border-hi); }
+
+.btn-danger {
+  padding: 9px 14px; font-size: 13px; font-weight: 600;
+  background: var(--red-dim); color: var(--red);
+  border: 1px solid rgba(217,80,80,0.18);
+}
+.btn-danger:hover { background: rgba(217,80,80,0.18); }
+
+.btn-gold {
+  padding: 9px 14px; font-size: 13px; font-weight: 600;
+  background: var(--gold-dim); color: var(--gold);
+  border: 1px solid rgba(212,164,65,0.2);
+}
+
+/* Ripple */
+.btn .ripple {
+  position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  transform: scale(0);
+  animation: ripple .4s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes ripple { to { transform: scale(5); opacity: 0; } }
+
+/* ─── ADD FORM ─────────────────────────────────────────── */
+.add-form { display: flex; gap: 9px; position: relative; }
+
+.input-wrap { flex: 1; position: relative; }
+
+input[type="text"] {
+  width: 100%; height: 52px;
   background: var(--surface-2);
-  border: 1px solid var(--border-hi);
+  border: 1px solid var(--border);
   border-radius: var(--r-sm);
   color: var(--text);
-  font-family: 'Outfit', sans-serif; font-size: 15px;
+  font-family: 'Outfit', sans-serif; font-size: 16px;
   padding: 0 14px; outline: none;
   -webkit-appearance: none;
   transition: border-color .15s;
-  width: 100%;
 }
-.form-input::placeholder { color: var(--text-dim); }
-.form-input:focus { border-color: var(--gold); }
+input[type="text"]::placeholder { color: var(--text-muted); }
+input[type="text"]:focus { border-color: var(--green); }
 
-.form-note {
-  font-size: 12px; color: var(--text-muted);
-  text-align: center; line-height: 1.5;
-}
-.form-note a { color: var(--gold); text-decoration: none; }
-
-.submit-btn {
-  height: 54px;
-  background: linear-gradient(135deg, #B8892B, #D4A441, #EEC060);
-  color: #0D0800;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700; font-size: 16px;
-  border: none; border-radius: var(--r-sm);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: filter .15s, transform .12s;
-  letter-spacing: 0.1px;
-}
-.submit-btn:hover { filter: brightness(1.08); }
-.submit-btn:active { transform: scale(0.97); }
-
-.form-success {
+.autocomplete {
+  position: absolute; top: 100%; left: 0; right: 0;
+  margin-top: 4px; z-index: 80;
+  background: var(--surface-3);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-sm);
+  overflow: hidden;
   display: none;
-  text-align: center; padding: 32px 24px;
-  background: var(--green-dim);
-  border: 1px solid rgba(39,184,106,0.15);
+}
+.autocomplete.open { display: block; }
+.ac-item {
+  padding: 11px 14px; font-size: 14px;
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover, .ac-item.focus { background: var(--surface-2); color: var(--gold); }
+.ac-icon { font-size: 12px; color: var(--text-muted); }
+
+/* ─── SECTION CARD ─────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--r);
+  padding: 14px;
 }
-.form-success .success-icon { font-size: 36px; margin-bottom: 12px; }
-.form-success h3 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px; letter-spacing: 1px;
-  color: var(--text); margin-bottom: 8px;
-}
-.form-success p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
-
-/* ─── FOOTER ───────────────────────────────────────────────── */
-footer {
-  position: relative; z-index: 1;
-  padding: 32px 24px;
-  border-top: 1px solid var(--border);
+.card-header {
   display: flex; align-items: center;
-  justify-content: space-between; flex-wrap: wrap; gap: 12px;
-  max-width: 960px; margin: 0 auto;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
-.footer-brand {
-  display: flex; align-items: center; gap: 8px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px; letter-spacing: 1.5px;
+.card-title {
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0;
   color: var(--text-muted);
+  display: flex; align-items: center; gap: 7px;
 }
-.footer-copy {
-  font-size: 12px; color: var(--text-dim);
-}
-
-/* ─── ANIMATIONS ───────────────────────────────────────────── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.reveal {
-  opacity: 0; transform: translateY(16px);
-  transition: opacity .55s ease-out, transform .55s ease-out;
-}
-.reveal.visible {
-  opacity: 1; transform: translateY(0);
+/* Queue count badge */
+.q-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10px; font-weight: 700;
+  color: var(--text-muted);
+  padding: 0 5px;
 }
 
-/* ─── DIVIDER LINE ─────────────────────────────────────────── */
-.gold-divider {
-  position: relative; z-index: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212,164,65,0.2), transparent);
-  margin: 0 24px;
+/* ─── QUEUE ────────────────────────────────────────────── */
+.queue-list { display: flex; flex-direction: column; gap: 6px; }
+
+.q-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 10px 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  animation: fadeSlideIn .2s ease-out both;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.q-pos {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; color: var(--text-dim);
+  width: 22px; text-align: center; flex-shrink: 0; line-height: 1;
+}
+.q-pos.next { color: var(--gold); }
+.q-pos.soon { color: var(--text-muted); }
+.q-name { flex: 1; font-weight: 500; font-size: 15px; }
+.q-wait { font-size: 11px; color: var(--text-muted); }
+
+.q-btns {
+  display: flex; gap: 3px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.q-item:hover .q-btns { opacity: 1; }
+@media (hover: none) { .q-btns { opacity: 1; } }
+
+.q-btn {
+  width: 30px; height: 30px;
+  border-radius: 6px; border: 0;
+  background: transparent; color: var(--text-muted);
+  cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.q-btn:hover { background: var(--surface-3); color: var(--text); }
+.q-btn.rm:hover { color: var(--red); }
+.q-btn.up:hover { color: var(--gold); }
+
+.q-empty {
+  text-align: center; color: var(--text-dim);
+  font-size: 13px; padding: 18px;
 }
 
+/* ─── LEADERBOARD ──────────────────────────────────────── */
+.lb-list { display: flex; flex-direction: column; gap: 5px; }
+
+.lb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 10px 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  border-left: 2px solid transparent;
+}
+.lb-item.lb-top {
+  border-left-color: rgba(212,164,65,0.35);
+}
+.lb-rank {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; color: var(--text-dim);
+  width: 20px; text-align: center; flex-shrink: 0; line-height: 1;
+}
+.lb-rank.r1 { color: #D4A441; }
+.lb-rank.r2 { color: #9CA3AF; }
+.lb-rank.r3 { color: #B07040; }
+.lb-name { flex: 1; font-weight: 600; font-size: 14px; }
+.lb-wins {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px; color: var(--gold); line-height: 1;
+}
+.lb-wins-lbl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.lb-ratio { font-size: 11px; color: var(--text-muted); margin-right: 4px; }
+
+.lb-edit-btn {
+  width: 28px; height: 28px; border-radius: 5px; border: 0;
+  background: transparent; color: var(--text-dim);
+  cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color .12s, background .12s;
+  opacity: 0;
+}
+.lb-item:hover .lb-edit-btn { opacity: 1; color: var(--gold); }
+@media (hover: none) { .lb-edit-btn { opacity: 0.7; } }
+
+.lb-score-input {
+  width: 50px; height: 28px;
+  background: var(--surface-3);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  color: var(--gold);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px; text-align: center;
+  outline: none; padding: 0 4px;
+}
+
+.lb-footer {
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── TOAST ────────────────────────────────────────────── */
+.toast-wrap {
+  position: fixed;
+  top: 62px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+  pointer-events: none;
+  width: calc(100% - 28px);
+  max-width: 400px;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  border: 1px solid var(--border-hi);
+  box-shadow: 0 10px 32px rgba(0,0,0,0.45);
+  font-size: 13px; font-weight: 500;
+  pointer-events: all; cursor: pointer; width: 100%;
+  animation: tIn .22s ease-out both;
+}
+@keyframes tIn {
+  from { opacity: 0; transform: translateY(-7px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast.out { animation: tOut .18s ease-in forwards; }
+@keyframes tOut { to { opacity: 0; transform: translateY(-5px) scale(0.95); } }
+.toast-ico { font-size: 17px; flex-shrink: 0; }
+.toast-body { flex: 1; }
+.toast-t { font-weight: 700; font-size: 13px; }
+.toast-m { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.toast-undo {
+  font-size: 12px; font-weight: 700; color: var(--gold);
+  background: transparent; border: 0; cursor: pointer;
+  padding: 4px 2px; flex-shrink: 0;
+}
+.toast.win   { border-color: rgba(212,164,65,0.28); }
+.toast.added { border-color: rgba(39,184,106,0.22); }
+.toast.error { border-color: rgba(217,80,80,0.22); }
+
+/* ─── MODALS ───────────────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.65);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fadeIn .18s ease-out both;
+}
+.overlay[hidden] { display: none; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  padding: 22px;
+  width: 100%; max-width: 320px;
+  animation: scaleIn .2s ease-out both;
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.modal-title { font-weight: 700; font-size: 16px; margin-bottom: 5px; }
+.modal-body  { font-size: 13px; color: var(--text-muted); line-height: 1.55; margin-bottom: 18px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ─── ADMIN SHEET (bottom-sheet) ───────────────────────── */
+.sheet-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: fadeIn .18s ease-out both;
+}
+.sheet-overlay[hidden] { display: none; }
+
+.admin-sheet {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r) var(--r) 0 0;
+  padding: 14px 18px 44px;
+  width: 100%; max-width: 480px;
+  animation: slideUp .25s ease-out both;
+}
+@keyframes slideUp {
+  from { transform: translateY(50px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--border-hi);
+  border-radius: 999px;
+  margin: 0 auto 14px;
+}
+.sheet-title { font-weight: 700; font-size: 16px; margin-bottom: 3px; }
+.sheet-sub   { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; }
+.sheet-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* ─── TV OVERLAY ───────────────────────────────────────── */
+.tv {
+  position: fixed; inset: 0; z-index: 150;
+  background: #05060A;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 30px;
+}
+.tv[hidden] { display: none; }
+
+.tv-brand {
+  position: absolute; top: 26px;
+  left: 0; right: 0; text-align: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 6px;
+  color: rgba(255,255,255,0.12);
+}
+.tv-close {
+  position: absolute; top: 16px; right: 16px;
+}
+.tv-streak {
+  position: absolute; top: 66px;
+  left: 0; right: 0; text-align: center;
+  font-size: 13px; font-weight: 600;
+  color: var(--gold); opacity: 0;
+  transition: opacity .3s;
+}
+.tv-streak.on { opacity: 1; }
+
+.tv-match {
+  display: flex; align-items: center;
+  justify-content: center; gap: 40px;
+  width: 100%; max-width: 1000px;
+}
+.tv-player {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+}
+.tv-role {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 4px; text-transform: uppercase;
+}
+.tv-player.champ .tv-role { color: var(--gold); }
+.tv-player.chal  .tv-role { color: var(--text-muted); }
+.tv-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(48px, 9vw, 110px);
+  line-height: .9; text-align: center;
+  word-break: break-all;
+}
+.tv-player.champ .tv-name { color: var(--gold-lt); }
+.tv-player.chal  .tv-name { color: var(--text); }
+.tv-stat { font-size: 14px; color: var(--text-muted); }
+
+.tv-vs { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+.tv-vs-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px; letter-spacing: 4px;
+  color: rgba(255,255,255,0.09);
+}
+
+.tv-queue {
+  position: absolute; bottom: 28px;
+  left: 0; right: 0;
+  text-align: center; font-size: 13px;
+  color: rgba(255,255,255,0.22);
+  letter-spacing: 1px;
+}
+.tv-clock {
+  position: absolute; top: 26px; right: 34px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; letter-spacing: 2px;
+  color: rgba(255,255,255,0.15);
+}
+
+/* ─── WIN FLASH ────────────────────────────────────────── */
+@keyframes namePop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+.pop { animation: namePop .35s cubic-bezier(.22,1,.36,1) both; }
+
+/* ─── MISC ─────────────────────────────────────────────── */
+.sep { height: 1px; background: var(--border); margin: 8px 0; }
+
+footer {
+  text-align: center; padding: 5px;
+  color: transparent; font-size: 10px;
+  user-select: none;
+}
+
+/* ─── DESKTOP LAYOUT ───────────────────────────────────── */
+@media (min-width: 860px) {
+  .app { max-width: 900px; }
+  main {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 12px;
+    align-items: start;
+  }
+}
 </style>
 </head>
 <body>
 
-<!-- NAV -->
-<nav>
-  <a class="nav-brand" href="#">
-    <span class="nav-icon">🎱</span>
-    <span class="nav-name">Whosonnext&nbsp;</span>
-  </a>
-  <a class="nav-cta" href="#signup">Get your pub set up</a>
-</nav>
+<canvas id="snowCanvas"></canvas>
+<canvas id="particles"></canvas>
 
-<!-- HERO -->
-<div class="hero">
-  <div class="hero-eyebrow">
-    <span class="eyebrow-dot"></span>
-    Live at pubs near you
-  </div>
+<div class="app">
 
-  <h1 class="hero-heading">
-    Winner<br><em>Stays On.</em><br>Sorted.
-  </h1>
+  <header class="header">
+    <div class="brand">
+      <span class="brand-icon">🎱</span>
+      <span class="brand-name" id="brandName">Loading…</span>
+    </div>
+    <div class="header-right">
+      <div class="status-dot" id="statusDot"></div>
+      
+      <button class="icon-btn" id="adminBtn" title="Admin">
+      <svg width="13" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </button>
+      <button class="icon-btn" id="tvBtn" title="TV Mode">
+      <svg width="15" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <polyline points="8 21 12 17 16 21"/>
+      </svg>
+    </button>
+    </div>
+  </header>
 
-  <p class="hero-sub">
-    A pool night app built for the table in the corner.
-    Queue management, live leaderboards, and a TV mode —
-    all running on any phone, no app download needed.
-  </p>
-
-  <div class="hero-btns">
-    <a class="btn-primary" href="#signup">
-      Get started free
-      <span>→</span>
-    </a>
-    <a class="btn-secondary" href="#how">
-      See how it works
-    </a>
-  </div>
-
-  <!-- Mock phone preview -->
-  <div class="hero-preview">
-    <div class="phone-frame">
-      <div class="phone-bar">
-        <span class="phone-brand">🎱 The Crown</span>
-        <span class="phone-dot"></span>
-      </div>
-      <div class="phone-body">
-        <div class="mock-match">
-          <div class="mock-streak">🔥 Jamie is on a 4-game streak</div>
-          <div class="mock-player champ">
-            <div class="mock-role">Champion</div>
-            <div class="mock-name">JAMIE</div>
-          </div>
-          <div class="mock-vs">VS</div>
-          <div class="mock-player chal">
-            <div class="mock-role">Challenger</div>
-            <div class="mock-name">DAVE</div>
-          </div>
-          <div class="mock-btns">
-            <div class="mock-btn gold">Jamie Wins</div>
-            <div class="mock-btn red">Dave Wins</div>
-          </div>
+  <main>
+    <div class="col-left">
+      <div class="match-card">
+        <div class="streak-bar" id="streakBar">
+          <span class="streak-fire">🔥</span>
+          <span id="streakText"></span>
         </div>
-        <div class="mock-queue">
-          <div class="mock-q-title">
-            Next up <span class="mock-q-badge">3</span>
+        <div class="match-body">
+          <div class="player-slots">
+            <div class="p-slot champ" id="champSlot">
+              <div class="p-label">Champion</div>
+              <div class="p-name" id="champName">—</div>
+              <div class="p-stat" id="champStat"></div>
+            </div>
+            <div class="vs-row">
+              <div class="vs-line"></div>
+              <div class="vs-text">VS</div>
+              <div class="vs-line"></div>
+            </div>
+            <div class="p-slot chal" id="chalSlot">
+              <div class="p-label">Challenger</div>
+              <div class="p-name" id="chalName">—</div>
+              <div class="p-stat" id="chalStat"></div>
+            </div>
           </div>
-          <div class="mock-q-item">
-            <span class="mock-q-num next">1</span> Sarah
+
+          <div class="actions" id="matchActions">
+            <div class="actions-pair">
+              <button class="btn btn-champ" id="champWinsBtn">Champion Wins</button>
+              <button class="btn btn-chal"  id="chalWinsBtn">Challenger Wins</button>
+            </div>
+            <button class="skip-link" id="skipBtn">Skip challenger</button>
           </div>
-          <div class="mock-q-item">
-            <span class="mock-q-num">2</span> Tom
-          </div>
-          <div class="mock-q-item">
-            <span class="mock-q-num">3</span> Priya
+
+          <div class="idle-msg" id="idleMsg" style="display:none">
+            Add your name below to get in line
           </div>
         </div>
       </div>
+
+      <div class="add-section">
+        <div class="add-form">
+          <div class="input-wrap">
+            <input type="text" id="nameInput" placeholder="Your name — tap to join" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" maxlength="30">
+            <div class="autocomplete" id="autoList"></div>
+          </div>
+          <button class="btn btn-add" id="addBtn">Join Queue</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <div class="card q-section">
+        <div class="card-header">
+          <span class="card-title">
+            Next up
+          </span>
+          <span class="q-badge" id="queueCount">0</span>
+        </div>
+        <div class="queue-list" id="queueList"></div>
+      </div>
+
+      <div class="card lb-section">
+        <div class="card-header">
+          <span class="card-title">Leaderboard</span>
+          <div class="lb-footer" style="margin:0;padding:0;border:0" id="lbAdminBar"></div>
+        </div>
+        <div class="lb-list" id="lbList"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    
+  </footer>
+</div><div class="tv" id="tvMode" hidden>
+  <div class="tv-brand">THE WEAVER</div>
+  <div class="tv-clock" id="tvClock"></div>
+  <button class="icon-btn tv-close" id="tvClose" title="Close">✕</button>
+  <div class="tv-streak" id="tvStreak"></div>
+  <div class="tv-match">
+    <div class="tv-player champ">
+      <div class="tv-role">Champion</div>
+      <div class="tv-name" id="tvChampName">—</div>
+      <div class="tv-stat" id="tvChampStat"></div>
+    </div>
+    <div class="tv-vs">
+      <div class="tv-vs-text">VS</div>
+    </div>
+    <div class="tv-player chal">
+      <div class="tv-role">Challenger</div>
+      <div class="tv-name" id="tvChalName">—</div>
+      <div class="tv-stat" id="tvChalStat"></div>
+    </div>
+  </div>
+  <div class="tv-queue" id="tvQueue"></div>
+</div>
+
+<div class="sheet-overlay" id="adminOverlay" hidden>
+  <div class="admin-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Admin Panel</div>
+    <div class="sheet-sub" id="adminSub">Enter passkey to unlock controls.</div>
+    <div id="adminContent">
+      </div>
+  </div>
+</div>
+
+<div class="overlay" id="confirmOverlay" hidden>
+  <div class="modal-card">
+    <div class="modal-title">Clear entire session?</div>
+    <div class="modal-body">This resets the queue, current match and all scores. It cannot be undone.</div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelClearBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmClearBtn">Yes, clear all</button>
     </div>
   </div>
 </div>
 
-<div class="gold-divider"></div>
+<div class="toast-wrap" id="toastWrap"></div>
 
-<!-- FEATURES -->
-<section>
-  <div class="section-eyebrow">What you get</div>
-  <h2 class="section-heading reveal">Everything pool night needs</h2>
-  <p class="section-sub reveal">
-    No app store. No login for players. They just scan a QR code and join the queue.
-  </p>
-
-  <div class="features-grid">
-    <div class="feat-card reveal">
-      <span class="feat-icon">🏆</span>
-      <div class="feat-title">Winner Stays On</div>
-      <p class="feat-desc">Champion vs challenger format with automatic queue rotation and streak tracking. The table runs itself.</p>
-    </div>
-    <div class="feat-card reveal">
-      <span class="feat-icon">📺</span>
-      <div class="feat-title">TV Mode</div>
-      <p class="feat-desc">Cast the current match to any screen behind the bar. Big names, live updates, no faff.</p>
-    </div>
-    <div class="feat-card reveal">
-      <span class="feat-icon">📊</span>
-      <div class="feat-title">Live Leaderboard</div>
-      <p class="feat-desc">Wins, games played, and win ratios tracked across the whole night. Regulars love watching their rank climb.</p>
-    </div>
-    <div class="feat-card reveal">
-      <span class="feat-icon">📱</span>
-      <div class="feat-title">Works on any device</div>
-      <p class="feat-desc">A web app — nothing to download. Runs on the bar tablet, a phone on the table edge, anything with a browser.</p>
-    </div>
-    <div class="feat-card reveal">
-      <span class="feat-icon">🔄</span>
-      <div class="feat-title">Real-time sync</div>
-      <p class="feat-desc">Multiple people can view the queue at once. Results update live across every device in the pub.</p>
-    </div>
-    <div class="feat-card reveal">
-      <span class="feat-icon">🔒</span>
-      <div class="feat-title">Staff controls</div>
-      <p class="feat-desc">Admin mode lets bar staff adjust scores, manage the queue, and clear the session at the end of the night.</p>
-    </div>
-  </div>
-</section>
-
-<div class="gold-divider"></div>
-
-<!-- HOW IT WORKS -->
-<div class="how-section" id="how">
-  <div class="how-section-inner">
-    <div class="section-eyebrow">How it works</div>
-    <h2 class="section-heading reveal">Up and running in minutes</h2>
-    <p class="section-sub reveal">No technical setup. No IT. Just a link your punters can open on their phone.</p>
-
-    <div class="steps">
-      <div class="step reveal">
-        <div class="step-num">1</div>
-        <div class="step-title">Register your pub</div>
-        <p class="step-desc">Fill in the form below — we'll set up your custom page and send you a link and QR code the same day.</p>
-      </div>
-      <div class="step reveal">
-        <div class="step-num">2</div>
-        <div class="step-title">Stick up the QR code</div>
-        <p class="step-desc">Print it out and put it on the table. Players scan it to join the queue on their own phones.</p>
-      </div>
-      <div class="step reveal">
-        <div class="step-num">3</div>
-        <div class="step-title">Let it run</div>
-        <p class="step-desc">The app handles everything — queue rotation, scores, streaks. You just pour the pints.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="gold-divider"></div>
-
-<!-- PRICING -->
-<section>
-  <div class="section-eyebrow">Pricing</div>
-  <h2 class="section-heading reveal">Simple and fair</h2>
-  <p class="section-sub reveal">Start free for as long as you need. Pay only when you're happy it works for your pub.</p>
-
-  <div class="pricing-grid">
-    <div class="price-card reveal">
-      <div class="price-name">Trial</div>
-      <div class="price-amount">
-        <span class="price-num">Free</span>
-      </div>
-      <p class="price-desc">Get set up, try it with your regulars, no card needed.</p>
-      <ul class="price-feats">
-        <li>Your own pub page</li>
-        <li>QR code for the table</li>
-        <li>All core features</li>
-        <li>No time limit on the trial</li>
-      </ul>
-      <a class="price-btn ghost" href="#signup">Get started</a>
-    </div>
-
-    <div class="price-card featured reveal">
-      <div class="price-badge">Most popular</div>
-      <div class="price-name">Monthly</div>
-      <div class="price-amount">
-        <span class="price-num">£25</span>
-        <span class="price-period">/ month</span>
-      </div>
-      <p class="price-desc">Everything in the trial, with ongoing support and new features as they ship.</p>
-      <ul class="price-feats">
-        <li>Everything in Trial</li>
-        <li>Priority support</li>
-        <li>Early access to new features</li>
-        <li>Cancel any time</li>
-      </ul>
-      <a class="price-btn gold" href="#signup">Get started free</a>
-    </div>
-  </div>
-</section>
-
-<div class="gold-divider"></div>
-
-<!-- SIGN UP -->
-<div class="signup-section" id="signup">
-  <div class="signup-inner">
-    <div class="section-eyebrow" style="text-align:center">Get set up</div>
-    <h2 class="section-heading reveal">Get your pub on the board</h2>
-    <p class="section-sub reveal">
-      Fill this in and we'll get back to you with your link and QR code — usually the same day.
-    </p>
-
-    <!--
-      FORMSPREE SETUP (takes 2 minutes):
-      1. Go to formspree.io and create a free account
-      2. Create a new form — it gives you an action URL like https://formspree.io/f/yourcode
-      3. Replace YOUR_FORMSPREE_ID below with that code
-      Done. Submissions go straight to your email.
-    -->
-    <form
-      class="signup-form"
-      id="signupForm"
-      action="https://formspree.io/f/xqeozpya"
-      method="POST"
-    >
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="pubName">Pub name</label>
-          <input class="form-input" type="text" id="pubName" name="pub_name" placeholder="The Red Lion" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="yourName">Your name</label>
-          <input class="form-input" type="text" id="yourName" name="your_name" placeholder="Jamie" required>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="email">Email address</label>
-        <input class="form-input" type="email" id="email" name="email" placeholder="jamie@theredlion.co.uk" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="message">Anything else? (optional)</label>
-        <input class="form-input" type="text" id="message" name="message" placeholder="e.g. we run pool nights on Thursdays">
-      </div>
-
-      <button class="submit-btn" type="submit">
-        Get set up — it's free
-        <span>🎱</span>
-      </button>
-
-      <p class="form-note">
-        No credit card. No commitment. We'll email you within 24 hours.
-      </p>
-    </form>
-
-    <div class="form-success" id="formSuccess">
-      <div class="success-icon">🎱</div>
-      <h3>You're on the list</h3>
-      <p>We'll be in touch with your pub's link and QR code within 24 hours. Get the pool table warmed up.</p>
-    </div>
-  </div>
-</div>
-
-<!-- FOOTER -->
-<footer>
-  <div class="footer-brand">🎱 whosonnext</div>
-  <div class="footer-copy">Built for pubs. Made in England.</div>
-</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <script>
-/* ─── SCROLL REVEAL ─────────────────────────────────────────── */
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((e, i) => {
-    if (e.isIntersecting) {
-      setTimeout(() => e.target.classList.add('visible'), i * 60);
-      observer.unobserve(e.target);
+/* ═══════════════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════════════ */
+const SUPABASE_URL      = "https://faxosthjdprblsicpqye.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZheG9zdGhqZHByYmxzaWNwcXllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxMjUwMTMsImV4cCI6MjA3ODcwMTAxM30.n87ztgEHte2XW3PQ67x-On_izxTJbhlX7vNeiKMtLc8";
+let SETTINGS_PASSKEY  = "pool";   // overwritten from Supabase at boot
+let PUB_NAME          = "";       // overwritten from Supabase at boot
+const HEARTBEAT_MS      = 20000;
+const CLIENT_TIMEOUT_MS = 60000;
+const DEFAULT_MAX_CLIENTS = 20;
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+let state = { winner: null, challenger: null, queue: [], scores: {}, streak: 0 };
+let clients        = [];
+let clientId       = null;
+let sessionId      = null;
+let supa           = null;
+let isRemote       = false;
+let pollingInterval   = null;
+let heartbeatInterval = null;
+let maxClients     = DEFAULT_MAX_CLIENTS;
+let adminUnlocked  = false;
+let lastState      = null; // for undo
+
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+
+function cryptoId() {
+  return 'c_' + [...crypto.getRandomValues(new Uint8Array(8))].map(n => n.toString(16).padStart(2, '0')).join('');
+}
+function escapeHtml(s) {
+  return ('' + s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+}
+function ensureScores(n) {
+  if (!state.scores[n]) state.scores[n] = { wins: 0, played: 0 };
+}
+function snapshot() {
+  lastState = JSON.parse(JSON.stringify(state));
+}
+function haptic(ms = 8) {
+  if ('vibrate' in navigator) navigator.vibrate(ms);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST SYSTEM
+═══════════════════════════════════════════════════════════ */
+const ICONS = { win:'🏆', added:'✅', error:'⚠️', info:'ℹ️', skip:'⏭' };
+
+function toast(title, msg = '', type = 'info', showUndo = false) {
+  const wrap = $('toastWrap');
+  const el   = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `
+    <span class="toast-ico">${ICONS[type] || '•'}</span>
+    <div class="toast-body">
+      <div class="toast-t">${escapeHtml(title)}</div>
+      ${msg ? `<div class="toast-m">${escapeHtml(msg)}</div>` : ''}
+    </div>
+    ${showUndo ? `<button class="toast-undo" id="undoBtn">Undo</button>` : ''}
+  `;
+  if (showUndo) {
+    el.querySelector('#undoBtn').addEventListener('click', e => { e.stopPropagation(); doUndo(); dismissToast(el); });
+  }
+  el.addEventListener('click', () => dismissToast(el));
+  wrap.appendChild(el);
+  const timeout = showUndo ? 5000 : 2800;
+  el._timer = setTimeout(() => dismissToast(el), timeout);
+  return el;
+}
+
+function dismissToast(el) {
+  if (!el || !el.isConnected) return;
+  clearTimeout(el._timer);
+  el.classList.add('out');
+  el.addEventListener('animationend', () => el.remove(), { once: true });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UNDO
+═══════════════════════════════════════════════════════════ */
+function doUndo() {
+  if (!lastState) return;
+  state = lastState;
+  lastState = null;
+  writeState();
+  renderAll();
+  toast('Undone', 'Last action reversed', 'info');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PARTICLES
+═══════════════════════════════════════════════════════════ */
+const pCanvas = $('particles');
+const pCtx    = pCanvas.getContext('2d');
+let pList = [];
+
+function resizeCanvas() {
+  pCanvas.width  = window.innerWidth;
+  pCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Particle {
+  constructor(x, y, color) {
+    this.x = x; this.y = y;
+    this.vx = (Math.random() - 0.5) * 9;
+    this.vy = (Math.random() - 0.9) * 9;
+    this.alpha = 1;
+    this.w = Math.random() * 7 + 3;
+    this.h = Math.random() * 4 + 2;
+    this.rot = Math.random() * Math.PI * 2;
+    this.rotV = (Math.random() - 0.5) * 0.25;
+    this.color = color;
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy;
+    this.vy += 0.22; this.alpha -= 0.017;
+    this.rot += this.rotV;
+  }
+  draw() {
+    pCtx.save();
+    pCtx.globalAlpha = Math.max(0, this.alpha);
+    pCtx.fillStyle   = this.color;
+    pCtx.translate(this.x, this.y);
+    pCtx.rotate(this.rot);
+    pCtx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+    pCtx.restore();
+  }
+}
+
+let pRaf = null;
+function burst(colors = ['#D4A441', '#EEC060', '#fff', '#27B86A']) {
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight * 0.42;
+  for (let i = 0; i < 70; i++) {
+    pList.push(new Particle(cx, cy, colors[i % colors.length]));
+  }
+  if (!pRaf) pAnimate();
+}
+function pAnimate() {
+  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  pList = pList.filter(p => p.alpha > 0);
+  pList.forEach(p => { p.update(); p.draw(); });
+  if (pList.length > 0) pRaf = requestAnimationFrame(pAnimate);
+  else { pRaf = null; pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height); }
+}
+
+/* Button ripple */
+function addRipple(btn, e) {
+  const rect = btn.getBoundingClientRect();
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const size = Math.max(rect.width, rect.height) * 1.5;
+  const x = (e.clientX - rect.left) - size / 2;
+  const y = (e.clientY - rect.top)  - size / 2;
+  r.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px`;
+  btn.appendChild(r);
+  r.addEventListener('animationend', () => r.remove(), { once: true });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIFECYCLE
+═══════════════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', async () => {
+  // ── 1. Read pub slug from URL (/pubs/<slug>) ──────────────
+  const slug = window.location.pathname.split('/pubs/')[1]?.replace(/\/$/, '') || null;
+
+  clientId   = localStorage.getItem('pub_pool_clientId') || cryptoId();
+  localStorage.setItem('pub_pool_clientId', clientId);
+  maxClients = parseInt(localStorage.getItem('pub_pool_maxClients')) || DEFAULT_MAX_CLIENTS;
+
+  // ── 2. Boot Supabase early so we can fetch pub config ─────
+  try {
+    if (!window.supabase) throw new Error('Supabase not loaded');
+    supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (e) {
+    console.warn('Supabase not available:', e);
+    supa = null;
+  }
+
+  // ── 3. Fetch pub config from the pubs table ───────────────
+  if (supa && slug) {
+    try {
+      const { data, error } = await supa
+        .from('pubs')
+        .select('name, passkey')
+        .eq('slug', slug)
+        .single();
+
+      if (error || !data) throw new Error('Pub not found: ' + slug);
+
+      PUB_NAME         = data.name;
+      SETTINGS_PASSKEY = data.passkey;
+    } catch (e) {
+      console.warn('Could not load pub config:', e);
+      PUB_NAME = 'WhosOnNext'; // fallback
+    }
+  } else {
+    PUB_NAME = 'WhosOnNext'; // no slug = landing / dev mode
+  }
+
+  // ── 4. Apply pub name to page ─────────────────────────────
+  document.title = PUB_NAME + ' — Pool';
+  const brandEl = document.getElementById('brandName');
+  if (brandEl) brandEl.textContent = PUB_NAME;
+
+  // ── 5. Session ID is now pub-scoped ───────────────────────
+  const today = new Date().toISOString().slice(0, 10);
+  sessionId = slug ? `pool-${slug}-${today}` : `pool-dev-${today}`;
+
+  wireUI();
+
+  // ── 6. Connect to session on Supabase ─────────────────────
+  try {
+    if (!supa) throw new Error('Supabase not loaded');
+    await ensureSessionOnServer();
+    await joinSession();
+    startPollingRemote();
+    startHeartbeatRemote();
+    isRemote = true;
+    setBadge(true);
+  } catch (e) {
+    console.warn('Supabase unavailable, falling back to local:', e);
+    supa = null; isRemote = false;
+    setBadge(false);
+    loadLocal();
+    startHeartbeatLocal();
+  }
+
+  assignInitialMatch();
+  renderAll();
+
+  // December snow
+  if (new Date().getMonth() === 11) initSnow();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   WIRE UI
+═══════════════════════════════════════════════════════════ */
+function wireUI() {
+  /* Main actions */
+  $('champWinsBtn').addEventListener('click', e => { addRipple(e.currentTarget, e); haptic(); champWins(); });
+  $('chalWinsBtn').addEventListener('click',  e => { addRipple(e.currentTarget, e); haptic(); chalWins();  });
+  $('skipBtn').addEventListener('click',      () => { haptic(); skipChal(); });
+
+  /* Add player */
+  $('addBtn').addEventListener('click', () => { haptic(); addPlayer(); });
+  $('nameInput').addEventListener('keydown', e => {
+    const list = $('autoList');
+    const items = list.querySelectorAll('.ac-item');
+    const focused = list.querySelector('.ac-item.focus');
+    if (e.key === 'Enter') {
+      if (focused) { $('nameInput').value = focused.dataset.name; }
+      hideAutocomplete();
+      haptic(); addPlayer();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (items.length) {
+        const next = focused ? (focused.nextElementSibling || items[0]) : items[0];
+        focused?.classList.remove('focus');
+        next.classList.add('focus');
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (items.length) {
+        const prev = focused ? (focused.previousElementSibling || items[items.length - 1]) : items[items.length - 1];
+        focused?.classList.remove('focus');
+        prev.classList.add('focus');
+      }
+    } else if (e.key === 'Escape') {
+      hideAutocomplete();
     }
   });
-}, { threshold: 0.12 });
+  $('nameInput').addEventListener('input', () => updateAutocomplete());
+  $('nameInput').addEventListener('blur',  () => setTimeout(hideAutocomplete, 150));
 
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  /* TV */
+  $('tvBtn').addEventListener('click',   () => openTV());
+  $('tvClose').addEventListener('click', () => closeTV());
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeTV(); hideAdmin(); }
+    if (e.key === 'f' && $('tvMode') && !$('tvMode').hidden) toggleFullscreen();
+  });
+  $('tvMode').addEventListener('click', e => {
+    if (e.target === $('tvMode')) toggleFullscreen();
+  });
 
-/* ─── FORM SUBMIT ────────────────────────────────────────────── */
-const form = document.getElementById('signupForm');
-const success = document.getElementById('formSuccess');
+  /* Admin */
+  $('adminBtn').addEventListener('click', () => openAdmin());
+  $('adminOverlay').addEventListener('click', e => { if (e.target === $('adminOverlay')) hideAdmin(); });
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = form.querySelector('.submit-btn');
-  btn.textContent = 'Sending…';
-  btn.disabled = true;
+  /* Clear confirm */
+  $('confirmClearBtn').addEventListener('click', () => { doClearAll(); $('confirmOverlay').hidden = true; });
+  $('cancelClearBtn').addEventListener('click',  () => { $('confirmOverlay').hidden = true; });
+  $('confirmOverlay').addEventListener('click',  e => { if (e.target === $('confirmOverlay')) $('confirmOverlay').hidden = true; });
 
-  try {
-    const res = await fetch(form.action, {
-      method: 'POST',
-      body: new FormData(form),
-      headers: { 'Accept': 'application/json' }
-    });
-    if (res.ok) {
-      form.style.display = 'none';
-      success.style.display = 'block';
-    } else {
-      throw new Error();
-    }
-  } catch {
-    btn.textContent = 'Something went wrong — try emailing us directly';
-    btn.disabled = false;
+  /* Expose for inline event handlers in rendered rows */
+  window.removePlayer = removePlayer;
+  window.bumpToTop    = bumpToTop;
+  window.editScore    = editScoreInline;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MATCH LOGIC
+═══════════════════════════════════════════════════════════ */
+function assignInitialMatch() {
+  if (!state.winner    && state.queue.length > 0) state.winner     = state.queue.shift();
+  if (!state.challenger && state.queue.length > 0) state.challenger = state.queue.shift();
+}
+
+function champWins() {
+  if (!state.winner || !state.challenger) return;
+  snapshot();
+  ensureScores(state.winner); ensureScores(state.challenger);
+  state.scores[state.winner].wins++;
+  state.scores[state.winner].played++;
+  state.scores[state.challenger].played++;
+  state.streak = (state.streak || 0) + 1;
+
+  const prevChamp = state.winner;
+  state.queue.push(state.challenger);
+  state.challenger = state.queue.shift() || null;
+
+  writeState(); renderAll();
+  burst(['#D4A441','#EEC060','#fff','#C49A30']);
+  const msg = state.streak > 1 ? `${prevChamp} wins! ${state.streak}-game streak 🔥` : `${prevChamp} wins!`;
+  toast('Champion wins!', msg, 'win', true);
+}
+
+function chalWins() {
+  if (!state.challenger) return;
+  snapshot();
+  ensureScores(state.challenger);
+  if (state.winner) ensureScores(state.winner);
+  if (state.winner) { state.scores[state.winner].played++; state.queue.push(state.winner); }
+  state.scores[state.challenger].wins++;
+  state.scores[state.challenger].played++;
+  state.streak = 1;
+
+  const newChamp = state.challenger;
+  state.winner     = newChamp;
+  state.challenger = state.queue.shift() || null;
+
+  writeState(); renderAll();
+  burst(['#D4A441','#fff','#EEC060','#27B86A']);
+  toast('Challenger wins!', `${newChamp} takes the table!`, 'win', true);
+}
+
+function skipChal() {
+  if (!state.challenger) return;
+  snapshot();
+  const skipped = state.challenger;
+  state.queue.push(state.challenger);
+  state.challenger = state.queue.shift() || null;
+  writeState(); renderAll();
+  toast('Skipped', `${skipped} moved to the back of the queue`, 'skip', true);
+}
+
+function addPlayer() {
+  const name = $('nameInput').value.trim();
+  if (!name) { $('nameInput').focus(); return; }
+
+  if (state.queue.includes(name) || state.winner === name || state.challenger === name) {
+    toast('Already in game', `${name} is already queued or playing`, 'error');
+    return;
   }
-});
-</script>
 
+  $('nameInput').value = '';
+  hideAutocomplete();
+  ensureScores(name);
+  state.queue.push(name);
+  assignInitialMatch();
+  writeState(); renderAll();
+  toast('Added!', `${name} is #${state.queue.length + (state.challenger ? 1 : 0) + (state.winner ? 0 : 0)} in queue`, 'added');
+}
+
+function removePlayer(name) {
+  snapshot();
+  state.queue = state.queue.filter(n => n !== name);
+
+  if (state.winner === name) {
+    // Promote challenger, pull new challenger
+    state.winner     = state.challenger;
+    state.challenger = state.queue.shift() || null;
+    state.streak     = 0;
+  } else if (state.challenger === name) {
+    state.challenger = state.queue.shift() || null;
+  }
+
+  writeState(); renderAll();
+  toast('Removed', `${name} removed`, 'info');
+}
+
+function bumpToTop(name) {
+  state.queue = state.queue.filter(n => n !== name);
+  state.queue.unshift(name);
+  writeState(); renderAll();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AUTOCOMPLETE
+═══════════════════════════════════════════════════════════ */
+function updateAutocomplete() {
+  const val = $('nameInput').value.trim().toLowerCase();
+  const list = $('autoList');
+  if (!val || val.length < 1) { hideAutocomplete(); return; }
+
+  const known = Object.keys(state.scores)
+    .filter(n => n.toLowerCase().startsWith(val) && n !== state.winner && n !== state.challenger && !state.queue.includes(n));
+
+  if (!known.length) { hideAutocomplete(); return; }
+
+  list.innerHTML = known.slice(0, 5).map(n =>
+    `<div class="ac-item" data-name="${escapeHtml(n)}" onmousedown="pickAC('${n.replace(/'/g,"\\'")}')">
+       <span class="ac-icon">⏱</span>${escapeHtml(n)}
+     </div>`
+  ).join('');
+  list.classList.add('open');
+}
+
+function pickAC(name) {
+  $('nameInput').value = name;
+  hideAutocomplete();
+  addPlayer();
+}
+
+function hideAutocomplete() {
+  $('autoList').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════════════ */
+function renderAll() {
+  renderMatch();
+  renderQueue();
+  renderLeaderboard();
+  renderTV();
+}
+
+function renderMatch() {
+  const hasMatch = state.winner && state.challenger;
+
+  /* Names */
+  $('champName').textContent = state.winner     || '—';
+  $('chalName').textContent  = state.challenger || '—';
+
+  /* Empty slot style */
+  $('champSlot').classList.toggle('empty', !state.winner);
+  $('chalSlot').classList.toggle('empty',  !state.challenger);
+
+  /* Stats */
+  if (state.winner && state.scores[state.winner]) {
+    const s = state.scores[state.winner];
+    $('champStat').textContent = `${s.wins}W · ${s.played}G`;
+  } else { $('champStat').textContent = ''; }
+
+  if (state.challenger && state.scores[state.challenger]) {
+    const s = state.scores[state.challenger];
+    $('chalStat').textContent = `${s.wins}W · ${s.played}G`;
+  } else { $('chalStat').textContent = ''; }
+
+  /* Buttons */
+  $('matchActions').style.display = hasMatch ? '' : 'none';
+  $('idleMsg').style.display = (!state.winner && !state.challenger) ? '' : 'none';
+
+  /* Streak bar */
+  const streak = state.streak || 0;
+  if (streak >= 2 && state.winner) {
+    $('streakText').textContent = `${state.winner} is on a ${streak}-game streak`;
+    $('streakBar').classList.add('on');
+  } else {
+    $('streakBar').classList.remove('on');
+  }
+}
+
+function renderQueue() {
+  const list = $('queueList');
+  list.innerHTML = '';
+
+  if (!state.queue.length) {
+    list.innerHTML = '<div class="q-empty">Queue is empty</div>';
+    $('queueCount').textContent = '0';
+    return;
+  }
+  $('queueCount').textContent = state.queue.length;
+
+  state.queue.forEach((name, i) => {
+    const safe  = escapeHtml(name);
+    const jsN   = name.replace(/'/g, "\\'");
+    const posClass = i === 0 ? 'next' : i === 1 ? 'soon' : '';
+    const waitNote = i === 0 ? 'Up next' : `~${i + 1} games`;
+    const div = document.createElement('div');
+    div.className = 'q-item';
+    div.innerHTML = `
+      <div class="q-pos ${posClass}">${i + 1}</div>
+      <div class="q-name">${safe}</div>
+      <div class="q-wait">${waitNote}</div>
+      <div class="q-btns">
+        ${adminUnlocked ? `<button class="q-btn up" onclick="bumpToTop('${jsN}')" title="Move to top">▲</button>` : ''}
+        <button class="q-btn rm" onclick="removePlayer('${jsN}')" title="Remove">✕</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function renderLeaderboard() {
+  const list = $('lbList');
+  list.innerHTML = '';
+
+  const items = Object.keys(state.scores)
+    .map(n => ({ name: n, wins: state.scores[n].wins || 0, played: state.scores[n].played || 0 }))
+    .sort((a, b) => b.wins - a.wins);
+
+  if (!items.length) {
+    list.innerHTML = '<div class="q-empty">No scores yet</div>';
+  } else {
+    const rankClass = ['r1', 'r2', 'r3'];
+    items.forEach((it, i) => {
+      const ratio = it.played ? Math.round((it.wins / it.played) * 100) + '%' : '—';
+      const safe  = escapeHtml(it.name);
+      const jsN   = it.name.replace(/'/g, "\\'");
+      const div   = document.createElement('div');
+      div.className = 'lb-item' + (i === 0 ? ' lb-top' : '');
+      div.innerHTML = `
+        <div class="lb-rank ${rankClass[i] || ''}">${i + 1}</div>
+        <div class="lb-name">${safe}</div>
+        <div class="lb-ratio">${ratio}</div>
+        <div style="display:flex;align-items:baseline;gap:3px">
+          <div class="lb-wins" id="wins-${safe}">${it.wins}</div>
+          <div class="lb-wins-lbl">W</div>
+        </div>
+        ${adminUnlocked ? `<button class="lb-edit-btn" onclick="editScore('${jsN}')" title="Edit wins">✎</button>` : ''}
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  /* Admin footer buttons */
+  const bar = $('lbAdminBar');
+  bar.innerHTML = '';
+  if (adminUnlocked) {
+    bar.innerHTML = `
+      <button class="btn btn-ghost btn-sm" onclick="exportTXT()">Export</button>
+      <button class="btn btn-danger btn-sm" onclick="$('confirmOverlay').hidden=false">Clear All</button>
+    `;
+    bar.querySelectorAll('button').forEach(b => {
+      b.style.cssText = 'padding:6px 10px;font-size:11px;font-weight:700;border-radius:6px;';
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INLINE SCORE EDIT
+═══════════════════════════════════════════════════════════ */
+function editScoreInline(name) {
+  if (!adminUnlocked) { toast('Locked', 'Unlock admin to edit scores', 'error'); return; }
+  const safe = escapeHtml(name);
+  const cell = document.querySelector(`#wins-${safe}`);
+  if (!cell) return;
+  const cur  = state.scores[name]?.wins || 0;
+  const inp  = document.createElement('input');
+  inp.type  = 'number'; inp.className = 'lb-score-input';
+  inp.value = cur; inp.min = '0'; inp.max = '999';
+  cell.replaceWith(inp);
+  inp.focus(); inp.select();
+
+  function commit() {
+    const n = parseInt(inp.value);
+    if (!isNaN(n) && n >= 0) {
+      ensureScores(name);
+      state.scores[name].wins = n;
+      writeState();
+    }
+    renderLeaderboard();
+  }
+  inp.addEventListener('blur',    commit);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { inp.blur(); } if (e.key === 'Escape') renderLeaderboard(); });
+}
+
+/* alias */
+function editScore(name) { editScoreInline(name); }
+
+/* ═══════════════════════════════════════════════════════════
+   TV MODE
+═══════════════════════════════════════════════════════════ */
+let tvClockInterval = null;
+
+function openTV() {
+  $('tvMode').hidden = false;
+  renderTV();
+  tvClockInterval = setInterval(updateTVClock, 1000);
+  updateTVClock();
+  if (document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+function closeTV() {
+  $('tvMode').hidden = true;
+  clearInterval(tvClockInterval);
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else document.documentElement.requestFullscreen().catch(() => {});
+}
+function updateTVClock() {
+  const now = new Date();
+  $('tvClock').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+function renderTV() {
+  $('tvChampName').textContent = state.winner     || '—';
+  $('tvChalName').textContent  = state.challenger || '—';
+
+  if (state.winner && state.scores[state.winner]) {
+    const s = state.scores[state.winner];
+    $('tvChampStat').textContent = `${s.wins} wins`;
+  } else { $('tvChampStat').textContent = ''; }
+
+  if (state.challenger && state.scores[state.challenger]) {
+    const s = state.scores[state.challenger];
+    $('tvChalStat').textContent = `${s.wins} wins`;
+  } else { $('tvChalStat').textContent = ''; }
+
+  const streak = state.streak || 0;
+  const tvS = $('tvStreak');
+  if (streak >= 2 && state.winner) {
+    tvS.textContent = `🔥 ${state.winner} on a ${streak}-game streak`;
+    tvS.classList.add('on');
+  } else { tvS.classList.remove('on'); }
+
+  const q = state.queue.slice(0, 5);
+  if (q.length) {
+    $('tvQueue').textContent = 'Up next: ' + q.join(' → ');
+  } else { $('tvQueue').textContent = ''; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN
+═══════════════════════════════════════════════════════════ */
+function openAdmin() {
+  $('adminOverlay').hidden = false;
+  renderAdminContent();
+}
+function hideAdmin() {
+  $('adminOverlay').hidden = true;
+}
+function renderAdminContent() {
+  const content = $('adminContent');
+  const sub     = $('adminSub');
+
+  if (!adminUnlocked) {
+    sub.textContent = 'Enter passkey to unlock controls.';
+    content.innerHTML = `
+      <input type="password" id="passkeyInput" placeholder="Passkey" style="width:100%;margin-bottom:10px" autocomplete="current-password">
+      <div id="passkeyErr" style="color:#D95050;font-size:12px;display:none;margin-bottom:8px">Incorrect passkey</div>
+      <button class="btn btn-gold" style="width:100%;padding:13px;font-size:14px" onclick="tryPasskey()">Unlock</button>
+    `;
+    content.querySelector('#passkeyInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') tryPasskey();
+    });
+    setTimeout(() => content.querySelector('#passkeyInput')?.focus(), 50);
+  } else {
+    sub.textContent = 'Admin unlocked for this session.';
+    content.innerHTML = `
+      <div class="sheet-grid">
+        <button class="btn btn-gold"   style="padding:13px;font-size:13px" onclick="exportTXT(); hideAdmin()">📤 Export</button>
+        <button class="btn btn-danger" style="padding:13px;font-size:13px" onclick="hideAdmin(); $('confirmOverlay').hidden=false">🗑 Clear All</button>
+      </div>
+      <div class="sep" style="margin:14px 0"></div>
+      <div style="font-size:12px;color:var(--text-muted)">Session: ${sessionId}</div>
+    `;
+  }
+}
+
+function tryPasskey() {
+  const val = $('passkeyInput')?.value || '';
+  if (val.toLowerCase() === SETTINGS_PASSKEY) {
+    adminUnlocked = true;
+    $('adminBtn').classList.add('unlocked');
+    hideAdmin();
+    toast('Admin unlocked', 'You can now edit scores and clear sessions', 'info');
+    renderAll();
+  } else {
+    const err = $('passkeyErr');
+    if (err) { err.style.display = 'block'; }
+    if ($('passkeyInput')) { $('passkeyInput').value = ''; $('passkeyInput').focus(); }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CLEAR ALL
+═══════════════════════════════════════════════════════════ */
+function doClearAll() {
+  state = { winner: null, challenger: null, queue: [], scores: {}, streak: 0 };
+  lastState = null;
+  writeState(); renderAll();
+  toast('Session cleared', 'Queue and scores reset', 'info');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATUS BADGE
+═══════════════════════════════════════════════════════════ */
+function setBadge(online) {
+  $('statusDot').className = 'status-dot' + (online ? ' online' : '');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PERSISTENCE
+═══════════════════════════════════════════════════════════ */
+async function writeState() {
+  if (isRemote && supa) {
+    try {
+      await supa.from('sessions').update({ state }).eq('id', sessionId);
+    } catch (e) {
+      console.warn('Remote write failed', e);
+      setBadge(false); isRemote = false; saveLocal();
+    }
+  } else { saveLocal(); }
+}
+function saveLocal() {
+  localStorage.setItem('pub_pool_state_' + sessionId, JSON.stringify({ state, clients }));
+}
+function loadLocal() {
+  const raw = localStorage.getItem('pub_pool_state_' + sessionId);
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw);
+    state   = parsed.state   || state;
+    clients = parsed.clients || [];
+  } catch (e) {}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SUPABASE
+═══════════════════════════════════════════════════════════ */
+async function ensureSessionOnServer() {
+  const res = await supa.from('sessions').select('*').eq('id', sessionId).single();
+  if (res.error || !res.data) {
+    await supa.from('sessions').upsert({ id: sessionId, date: new Date().toISOString().slice(0, 10), state, clients: [] });
+    clients = []; isRemote = true; return;
+  }
+  state   = res.data.state   || state;
+  clients = res.data.clients || [];
+  // Migrate: ensure streak exists
+  if (state.streak === undefined) state.streak = 0;
+  isRemote = true;
+}
+
+async function joinSession() {
+  if (!supa) return;
+  try {
+    const res = await supa.from('sessions').select('*').eq('id', sessionId).single();
+    if (res?.data) clients = res.data.clients || [];
+  } catch (e) {}
+  pruneClients();
+  const idx = clients.findIndex(c => c.id === clientId);
+  if (idx >= 0) clients[idx].lastSeen = Date.now();
+  else clients.push({ id: clientId, lastSeen: Date.now() });
+  if (isRemote) {
+    try { await supa.from('sessions').update({ clients }).eq('id', sessionId); } catch (e) {}
+  }
+}
+
+function pruneClients() {
+  clients = clients.filter(c => Date.now() - c.lastSeen < CLIENT_TIMEOUT_MS);
+}
+
+let sessionSub = null;
+let connectionAttempt = 0;
+
+function startPollingRemote() {
+  // v2: remove channel instead of removeSubscription
+  if (sessionSub) { supa.removeChannel(sessionSub); sessionSub = null; }
+
+  // 1. v2 channel API — server-side filter means only this pub's session
+  //    fires the callback, reducing unnecessary traffic
+  sessionSub = supa
+    .channel('session:' + sessionId)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'sessions', filter: 'id=eq.' + sessionId },
+      payload => {
+        if (payload.new) {
+          // Only re-render if game state actually changed — heartbeat
+          // writes update `clients` not `state`, so skip those silently
+          const incoming = payload.new.state;
+          if (incoming && JSON.stringify(incoming) !== JSON.stringify(state)) {
+            state = incoming;
+            renderAll();
+          }
+          setBadge(true);
+          isRemote = true;
+        }
+      }
+    )
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        console.log('Realtime Connected');
+        connectionAttempt = 0;
+      }
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.warn('Realtime error, attempting soft reset...');
+        setTimeout(() => startPollingRemote(), 5000);
+      }
+    });
+
+  // 2. Fallback polling — only used if websocket drops
+  clearInterval(pollingInterval);
+  pollingInterval = setInterval(async () => {
+    try {
+      const { data, error } = await supa
+        .from('sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+      if (error) throw error;
+      if (data) {
+        // Same guard — don't flicker the UI if nothing changed
+        const incoming = data.state;
+        if (incoming && JSON.stringify(incoming) !== JSON.stringify(state)) {
+          state = incoming;
+          renderAll();
+        }
+        setBadge(true);
+        isRemote = true;
+      }
+    } catch (e) {
+      setBadge(false);
+      console.warn('Polling fallback failed, retrying in 12s...');
+    }
+  }, 12000);
+}
+
+function startHeartbeatRemote() {
+  heartbeatInterval && clearInterval(heartbeatInterval);
+  heartbeatInterval = setInterval(async () => {
+    pruneClients();
+    const idx = clients.findIndex(c => c.id === clientId);
+    if (idx >= 0) clients[idx].lastSeen = Date.now();
+    else clients.push({ id: clientId, lastSeen: Date.now() });
+    if (isRemote) {
+      try { await supa.from('sessions').update({ clients }).eq('id', sessionId); setBadge(true); }
+      catch (e) { setBadge(false); isRemote = false; }
+    }
+  }, HEARTBEAT_MS);
+}
+
+function startHeartbeatLocal() {
+  heartbeatInterval && clearInterval(heartbeatInterval);
+  heartbeatInterval = setInterval(() => {
+    pruneClients();
+    const idx = clients.findIndex(c => c.id === clientId);
+    if (idx >= 0) clients[idx].lastSeen = Date.now();
+    else clients.push({ id: clientId, lastSeen: Date.now() });
+    saveLocal();
+  }, HEARTBEAT_MS);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT
+═══════════════════════════════════════════════════════════ */
+function exportTXT() {
+  const date  = new Date().toISOString().slice(0, 10);
+  const items = Object.keys(state.scores)
+    .map(n => ({ name: n, wins: state.scores[n].wins || 0, played: state.scores[n].played || 0 }))
+    .sort((a, b) => b.wins - a.wins);
+  const lines = [
+    `Pub: ${PUB_NAME}`, `Date: ${date}`, '',
+    '=== LEADERBOARD ===',
+    ...items.map((it, i) => `${i + 1}. ${it.name} — ${it.wins} wins / ${it.played} games`),
+    '', '=== CURRENT MATCH ===',
+    `Champion:   ${state.winner     || '—'}`,
+    `Challenger: ${state.challenger || '—'}`,
+    `Streak:     ${state.streak || 0}`,
+    '', '=== QUEUE ===',
+    ...(state.queue.length ? state.queue.map((n, i) => `${i + 1}. ${n}`) : ['(empty)'])
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `weaver-pool-${date}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Exported', `weaver-pool-${date}.txt`, 'info');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SNOW (December only)
+═══════════════════════════════════════════════════════════ */
+function initSnow() {
+  const canvas = $('snowCanvas');
+  const ctx    = canvas.getContext('2d');
+  canvas.style.display = 'block';
+  let enabled = true;
+  let flakes  = [];
+
+  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+  window.addEventListener('resize', resize); resize();
+
+  class Flake {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * -canvas.height;
+      this.r = Math.random() * 3 + 1;
+      this.vy = Math.random() * 1 + 0.4;
+      this.vx = Math.random() * 0.8 - 0.4;
+      this.o  = Math.random() * 0.7 + 0.2;
+    }
+    update() {
+      this.y += this.vy; this.x += this.vx + Math.sin(this.y / 50) * 0.4;
+      if (this.y > canvas.height) this.reset();
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,210,255,${this.o})`;
+      ctx.fill();
+    }
+  }
+  for (let i = 0; i < 180; i++) flakes.push(new Flake());
+
+  function animate() {
+    if (!enabled) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    flakes.forEach(f => { f.update(); f.draw(); });
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  /* Optional: add a small toggle button to header */
+  const snowBtn = document.createElement('button');
+  snowBtn.className = 'icon-btn'; snowBtn.textContent = '❄️'; snowBtn.title = 'Toggle snow';
+  snowBtn.addEventListener('click', () => {
+    enabled = !enabled;
+    snowBtn.textContent = enabled ? '❄️' : '⛅';
+    if (enabled) { canvas.style.display = 'block'; animate(); }
+    else { ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.style.display = 'none'; }
+  });
+  $('adminBtn').before(snowBtn);
+}
+</script>
 </body>
 </html>
