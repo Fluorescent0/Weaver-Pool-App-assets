@@ -557,53 +557,11 @@ section {
 .signup-inner .section-heading { text-align: center; }
 .signup-inner .section-sub { text-align: center; margin: 0 auto 40px; }
 
-.signup-form {
-  display: flex; flex-direction: column; gap: 12px;
-}
-.form-row { display: flex; gap: 12px; }
-@media (max-width: 500px) { .form-row { flex-direction: column; } }
-
-.form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
-.form-label {
-  font-size: 11px; font-weight: 700;
-  letter-spacing: 1.5px; text-transform: uppercase;
-  color: var(--text-muted);
-}
-.form-input {
-  height: 50px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-hi);
-  border-radius: var(--r-sm);
-  color: var(--text);
-  font-family: 'Outfit', sans-serif; font-size: 15px;
-  padding: 0 14px; outline: none;
-  -webkit-appearance: none;
-  transition: border-color .15s;
-  width: 100%;
-}
-.form-input::placeholder { color: var(--text-dim); }
-.form-input:focus { border-color: var(--gold); }
-
 .form-note {
   font-size: 12px; color: var(--text-muted);
   text-align: center; line-height: 1.5;
 }
 .form-note a { color: var(--gold); text-decoration: none; }
-
-.submit-btn {
-  height: 54px;
-  background: linear-gradient(135deg, #B8892B, #D4A441, #EEC060);
-  color: #0D0800;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700; font-size: 16px;
-  border: none; border-radius: var(--r-sm);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: filter .15s, transform .12s;
-  letter-spacing: 0.1px;
-}
-.submit-btn:hover { filter: brightness(1.08); }
-.submit-btn:active { transform: scale(0.97); }
 
 .form-success {
   display: none;
@@ -611,6 +569,7 @@ section {
   background: var(--green-dim);
   border: 1px solid rgba(39,184,106,0.15);
   border-radius: var(--r);
+  margin-top: 24px;
 }
 .form-success .success-icon { font-size: 36px; margin-bottom: 12px; }
 .form-success h3 {
@@ -867,55 +826,20 @@ footer {
   <div class="signup-inner">
     <div class="section-eyebrow" style="text-align:center">Get set up</div>
     <h2 class="section-heading reveal">Get your pub on the board</h2>
-    <p class="section-sub reveal">
-      Fill this in and we'll get back to you with your link and QR code — usually the same day.
-    </p>
-
-    <!--
-<!-- Replace your existing form section with this -->
-<section id="signup" class="section reveal">
-  <div class="container">
-    <div class="cta-card">
-      <h2>Get Your Pub Connected</h2>
-      <p>Automate your pool queue and manage your tables for just <strong>£X/month</strong>.</p>
+    
+    <div class="price-card reveal" style="max-width: 440px; margin: 40px auto; text-align: center;">
+      <div class="price-name" style="margin-bottom: 12px;">Start your subscription</div>
+      <p class="section-sub" style="margin-bottom: 24px; color: var(--text-muted); font-size: 14px; text-align: center;">Automate your queue and manage your tables for just <strong>£25/month</strong>.</p>
       
-      <!-- Subscription Button -->
-      <button id="signup-btn" class="submit-btn">Start Your Subscription</button>
+      <button id="signup-btn" class="price-btn gold" style="padding: 16px;">
+       🔒 Start Subscription
+      </button>
       
-      <p class="small-text" style="margin-top: 1rem; color: #888;">
+      <p class="form-note" style="margin-top: 16px;">
         Setup takes less than 2 minutes. Need help? 
-        <a href="mailto:ruairi@whosonnext.uk" style="color:var(--gold)">Contact us</a>
+        <a href="mailto:ruairi@whosonnext.uk">Contact us</a>
       </p>
     </div>
-  </div>
-</section>
-
-<script>
-  // Handle Stripe Checkout
-  document.getElementById('signup-btn').addEventListener('click', async (e) => {
-    const btn = e.target;
-    btn.textContent = 'Redirecting to secure payment…';
-    btn.disabled = true;
-
-    try {
-      const response = await fetch('/.netlify/functions/create-checkout-session', {
-        method: 'POST',
-      });
-      
-      const data = await response.json();
-      
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('Checkout session failed');
-      }
-    } catch (err) {
-      console.error(err);
-      btn.textContent = 'Error - try again later';
-      btn.disabled = false;
-    }
-  });
-</script>
 
     <div class="form-success" id="formSuccess">
       <div class="success-icon">🎱</div>
@@ -944,33 +868,33 @@ const observer = new IntersectionObserver((entries) => {
 
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-/* ─── FORM SUBMIT ────────────────────────────────────────────── */
-const form = document.getElementById('signupForm');
-const success = document.getElementById('formSuccess');
+/* ─── STRIPE CHECKOUT ───────────────────────────────────────── */
+const signupBtn = document.getElementById('signup-btn');
+if (signupBtn) {
+  signupBtn.addEventListener('click', async (e) => {
+    const btn = e.target;
+    btn.textContent = 'Redirecting to secure payment…';
+    btn.disabled = true;
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = form.querySelector('.submit-btn');
-  btn.textContent = 'Sending…';
-  btn.disabled = true;
-
-  try {
-    const res = await fetch(form.action, {
-      method: 'POST',
-      body: new FormData(form),
-      headers: { 'Accept': 'application/json' }
-    });
-    if (res.ok) {
-      form.style.display = 'none';
-      success.style.display = 'block';
-    } else {
-      throw new Error();
+    try {
+      const response = await fetch('/.netlify/functions/create-checkout-session', {
+        method: 'POST',
+      });
+      
+      const data = await response.json();
+      
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Checkout session failed');
+      }
+    } catch (err) {
+      console.error(err);
+      btn.textContent = 'Error - try again later';
+      btn.disabled = false;
     }
-  } catch {
-    btn.textContent = 'Something went wrong — try emailing us directly';
-    btn.disabled = false;
-  }
-});
+  });
+}
 </script>
 
 </body>
