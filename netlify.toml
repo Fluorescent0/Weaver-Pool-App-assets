@@ -1,13 +1,11 @@
-
-# Consolidate Root (old, disabled)
-#[[redirects]]
-#  from = "/*"
-#  to = "/index.html"
-#  status = 200
-
-# Route all pub URLs to the single master app
+# 1. Redirect requests to /pubs/ (with no slug) to the landing page
 [[redirects]]
-  from = "/pubs/*"
+  from = "/pubs/"
+  to = "/"
+  status = 301
+
+# 2. Match actual slugs for the game
+[[redirects]]
+  from = "/pubs/:slug"
   to = "/app/index.html"
   status = 200
-
