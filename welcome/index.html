@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>You're live — WhosOnNext</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Fluorescent0/Weaver-Pool-App-assets/refs/heads/main/WON_favicon.ico">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #09090C;
+  --surface:  #111318;
+  --border:   rgba(255,255,255,0.06);
+  --gold:     #D4A441;
+  --gold-lt:  #EEC060;
+  --gold-dim: rgba(212,164,65,0.10);
+  --green:    #27B86A;
+  --text:     #EDE9E0;
+  --text-muted: #6B7280;
+  font-family: 'Outfit', system-ui, sans-serif;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100svh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px; text-align: center;
+  -webkit-font-smoothing: antialiased;
+}
+.icon { font-size: 52px; margin-bottom: 20px; }
+h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(48px, 12vw, 86px);
+  line-height: 1; letter-spacing: 1px;
+  color: var(--gold-lt);
+  margin-bottom: 16px;
+}
+p {
+  font-size: 16px; color: var(--text-muted);
+  line-height: 1.7; max-width: 420px;
+  margin-bottom: 12px;
+}
+.card {
+  margin-top: 32px;
+  background: var(--surface);
+  border: 1px solid rgba(212,164,65,0.2);
+  border-radius: 14px;
+  padding: 24px 28px;
+  max-width: 420px; width: 100%;
+  text-align: left;
+}
+.card-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 6px;
+}
+.card-value {
+  font-size: 15px; color: var(--text);
+  font-weight: 500; margin-bottom: 18px;
+}
+.card-value:last-child { margin-bottom: 0; }
+.home-link {
+  margin-top: 32px;
+  color: var(--text-muted); font-size: 14px;
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2px;
+  transition: color .15s;
+}
+.home-link:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="icon">🎱</div>
+<h1>You're Live</h1>
+<p>Payment confirmed. Check your email — your pub's link and admin passkey are on their way.</p>
+<p style="font-size:14px;">Didn't get it? Check your spam folder or reply to the confirmation email from Stripe.</p>
+
+<div class="card">
+  <div class="card-label">What happens next</div>
+  <div class="card-value">📧 Welcome email with your pub's URL arrives within a few minutes</div>
+  <div class="card-value">📋 Share the link or print a QR code for the table</div>
+  <div class="card-value">🔒 Use your passkey to manage the queue from the app</div>
+</div>
+
+<a class="home-link" href="/">← Back to whosonnext.uk</a>
+
+</body>
+</html>
