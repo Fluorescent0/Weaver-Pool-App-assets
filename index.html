@@ -868,33 +868,14 @@ const observer = new IntersectionObserver((entries) => {
 
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-/* ─── STRIPE CHECKOUT ───────────────────────────────────────── */
 const signupBtn = document.getElementById('signup-btn');
-if (signupBtn) {
-  signupBtn.addEventListener('click', async (e) => {
-    const btn = e.target;
-    btn.textContent = 'Redirecting to secure payment…';
-    btn.disabled = true;
-
-    try {
-      const response = await fetch('/.netlify/functions/create-checkout-session', {
-        method: 'POST',
-      });
-      
-      const data = await response.json();
-      
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('Checkout session failed');
-      }
-    } catch (err) {
-      console.error(err);
-      btn.textContent = 'Error - try again later';
-      btn.disabled = false;
-    }
-  });
-}
+  
+  if (signupBtn) {
+    signupBtn.addEventListener('click', () => {
+      // Direct navigation to Payment Link
+      window.location.href = 'https://buy.stripe.com/3cI14nfLk5ea7Xgg8A3Nm00';
+    });
+  }
 </script>
 
 </body>
