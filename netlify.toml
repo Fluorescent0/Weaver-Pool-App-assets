@@ -13,11 +13,11 @@
 # Redirects to success page for successful payments
   [[redirects]]
   from = "/success"
-  to = "/success.html"
+  to = "/success/success.html"
   status = 200
 
 #Redirects to cancelled page for cancelled payments.
 [[redirects]]
   from = "/cancelled"
-  to = "/cancelled.html"
+  to = "/cancelled/cancelled.html"
   status = 200
