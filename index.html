@@ -872,46 +872,50 @@ footer {
     </p>
 
     <!--
-      FORMSPREE SETUP (takes 2 minutes):
-      1. Go to formspree.io and create a free account
-      2. Create a new form — it gives you an action URL like https://formspree.io/f/yourcode
-      3. Replace YOUR_FORMSPREE_ID below with that code
-      Done. Submissions go straight to your email.
-    -->
-    <form
-      class="signup-form"
-      id="signupForm"
-      action="https://formspree.io/f/xqeozpya"
-      method="POST"
-    >
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="pubName">Pub name</label>
-          <input class="form-input" type="text" id="pubName" name="pub_name" placeholder="The Red Lion" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="yourName">Your name</label>
-          <input class="form-input" type="text" id="yourName" name="your_name" placeholder="Jamie" required>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="email">Email address</label>
-        <input class="form-input" type="email" id="email" name="email" placeholder="jamie@theredlion.co.uk" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="message">Anything else? (optional)</label>
-        <input class="form-input" type="text" id="message" name="message" placeholder="e.g. we run pool nights on Thursdays">
-      </div>
-
-      <button class="submit-btn" type="submit">
-        Get set up — it's free
-        <span>🎱</span>
-      </button>
-
-      <p class="form-note">
-        No credit card. No commitment. We'll email you within 24 hours.
+<!-- Replace your existing form section with this -->
+<section id="signup" class="section reveal">
+  <div class="container">
+    <div class="cta-card">
+      <h2>Get Your Pub Connected</h2>
+      <p>Automate your pool queue and manage your tables for just <strong>£X/month</strong>.</p>
+      
+      <!-- Subscription Button -->
+      <button id="signup-btn" class="submit-btn">Start Your Subscription</button>
+      
+      <p class="small-text" style="margin-top: 1rem; color: #888;">
+        Setup takes less than 2 minutes. Need help? 
+        <a href="mailto:ruairi@whosonnext.uk" style="color:var(--gold)">Contact us</a>
       </p>
-    </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Handle Stripe Checkout
+  document.getElementById('signup-btn').addEventListener('click', async (e) => {
+    const btn = e.target;
+    btn.textContent = 'Redirecting to secure payment…';
+    btn.disabled = true;
+
+    try {
+      const response = await fetch('/.netlify/functions/create-checkout-session', {
+        method: 'POST',
+      });
+      
+      const data = await response.json();
+      
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Checkout session failed');
+      }
+    } catch (err) {
+      console.error(err);
+      btn.textContent = 'Error - try again later';
+      btn.disabled = false;
+    }
+  });
+</script>
 
     <div class="form-success" id="formSuccess">
       <div class="success-icon">🎱</div>
