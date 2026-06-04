@@ -838,6 +838,19 @@ footer {
 </div>
 
 <div class="toast-wrap" id="toastWrap"></div>
+	
+<div class="overlay" id="errorOverlay" hidden>
+  <div class="modal-card">
+    <div class="modal-title">Pub not found</div>
+    <div class="modal-body">
+      The link provided is incorrect or the pub is not registered. 
+      <br><br>
+      Correct format: <strong>whosonnext.uk/pubs/example-pub-1234</strong>
+      <br><br>
+      Need help? Contact <a href="mailto:ruairi@whosonnext.uk" style="color:var(--gold)">ruairi@whosonnext.uk</a>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
@@ -1028,26 +1041,36 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ── 3. Fetch pub config from the pubs table ───────────────
-  if (supa && slug) {
-    try {
-      const { data, error } = await supa
-        .from('pubs')
-        .select('name, passkey')
-        .eq('slug', slug)
-        .single();
+if (supa && slug) {
+  try {
+    const { data, error } = await supa
+      .from('pubs')
+      .select('name, passkey')
+      .eq('slug', slug)
+      .single();
 
-      if (error || !data) throw new Error('Pub not found: ' + slug);
-
-      PUB_NAME         = data.name;
-      SETTINGS_PASSKEY = data.passkey;
-    } catch (e) {
-      console.warn('Could not load pub config:', e);
-      PUB_NAME = 'WhosOnNext'; // fallback
+    // If there is an error (e.g. 406 Not Found) or no data, show error
+    if (error || !data) {
+      $('errorOverlay').hidden = false;
+      return; // Stop further execution
     }
-  } else {
-    PUB_NAME = 'WhosOnNext'; // no slug = landing / dev mode
-  }
 
+    PUB_NAME         = data.name;
+    SETTINGS_PASSKEY = data.passkey;
+  } catch (e) {
+    // If something goes wrong with the request, show error
+    $('errorOverlay').hidden = false;
+    return;
+  }
+} else if (slug) {
+  // If a slug was provided but Supabase wasn't initialized
+  $('errorOverlay').hidden = false;
+  return;
+} else {
+  // No slug provided (the root /pubs/ redirect handles this, 
+  // but this covers direct access to /app/)
+  PUB_NAME = 'WhosOnNext'; 
+}
   // ── 4. Apply pub name to page ─────────────────────────────
   document.title = PUB_NAME + ' — Pool';
   const brandEl = document.getElementById('brandName');
