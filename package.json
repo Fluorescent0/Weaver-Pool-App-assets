@@ -1,1 +1,7 @@
-"stripe": "^latest"
+{
+  "name": "whosonnext.uk",
+  "private": true,
+  "dependencies": {
+    "stripe": "^22.2.0"
+  }
+}
