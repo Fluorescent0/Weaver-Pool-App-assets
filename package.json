@@ -2,6 +2,6 @@
   "name": "whosonnext.uk",
   "private": true,
   "dependencies": {
-    "stripe": "latest"
+    "stripe": "^22.2.0"
   }
 }
