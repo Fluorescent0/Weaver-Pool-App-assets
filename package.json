@@ -1,7 +1,9 @@
 {
   "name": "whosonnext.uk",
   "private": true,
+  "version": "1.0.0",
   "dependencies": {
-    "stripe": "^22.2.0"
+    "stripe": "^22.2.0",
+    "@supabase/supabase-js": "^2.0.0"
   }
 }
