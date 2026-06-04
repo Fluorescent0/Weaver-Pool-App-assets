@@ -1,11 +1,23 @@
-# 1. Redirect requests to /pubs/ (with no slug) to the landing page
+# Redirect requests to /pubs/ (with no slug) to the landing page
 [[redirects]]
   from = "/pubs/"
   to = "/"
   status = 301
 
-# 2. Match actual slugs for the game
+# Match actual slugs for the game
 [[redirects]]
   from = "/pubs/:slug"
   to = "/app/index.html"
+  status = 200
+
+# Redirects to success page for successful payments
+  [[redirects]]
+  from = "/success"
+  to = "/success.html"
+  status = 200
+
+#Redirects to cancelled page for cancelled payments.
+[[redirects]]
+  from = "/cancelled"
+  to = "/cancelled.html"
   status = 200
