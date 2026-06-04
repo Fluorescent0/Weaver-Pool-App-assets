@@ -33,7 +33,7 @@ exports.handler = async (event) => {
         },
         {
           key:   'passkey',
-          label: { type: 'custom', custom: 'Create admin passkey (staff use this to manage the app)' },
+          label: { type: 'custom', custom: 'Create admin passkey (staff use to manage the app)' },
           type:  'text',
         },
       ],
