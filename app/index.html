@@ -1056,7 +1056,31 @@ if (supa && slug) {
     }
 
     PUB_NAME         = data.name;
-    SETTINGS_PASSKEY = data.passkey;
+  	SETTINGS_PASSKEY = data.passkey;
+
+// ── Access check ──────────────────────────────────────────
+if (data.plan === 'inactive') {
+  document.body.innerHTML = `
+    <div style="
+      min-height:100svh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center;
+      padding:24px; background:#09090C; color:#EDE9E0;
+      font-family:'Outfit',sans-serif;
+    ">
+      <div style="font-size:48px;margin-bottom:16px;">🎱</div>
+      <div style="
+        font-family:'Bebas Neue',sans-serif;
+        font-size:clamp(40px,10vw,72px);
+        color:#D4A441; line-height:1; margin-bottom:16px;
+      ">Table's Closed</div>
+      <p style="color:#6B7280;max-width:340px;line-height:1.6;">
+        ${PUB_NAME}'s WhosOnNext subscription has ended.
+        Get back in the game at
+        <a href="https://whosonnext.uk" style="color:#D4A441;">whosonnext.uk</a>
+      </p>
+    </div>`;
+  return; // stop the app initialising
+}
   } catch (e) {
     // If something goes wrong with the request, show error
     $('errorOverlay').hidden = false;
