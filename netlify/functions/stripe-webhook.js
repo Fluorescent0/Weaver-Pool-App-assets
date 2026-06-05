@@ -19,6 +19,7 @@ function toSlug(name) {
 
 exports.handler = async (event) => {
   const stripe   = new Stripe(process.env.STRIPE_SECRET_KEY);
+  console.log('KEY CHECK:', process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 20), '| length:', process.env.SUPABASE_SERVICE_ROLE_KEY?.length);
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
