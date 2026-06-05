@@ -1,12 +1,14 @@
 // netlify/functions/stripe-webhook.js
-// Receives Stripe events. On completed checkout:
-//   1. Inserts a new row into the Supabase pubs table
-//   2. Emails the pub their link and passkey via Resend
+// Handles three Stripe events:
+//   checkout.session.completed  > create pub row + send welcome email
+//   invoice.payment_succeeded   > mark plan as active (trial > paid)
+//   customer.subscription.deleted > mark plan as inactive (access revoked)
+//
+// Register all three in your Stripe webhook dashboard.
 
-const Stripe                     = require('stripe');
-const { createClient }           = require('@supabase/supabase-js');
+const Stripe           = require('stripe');
+const { createClient } = require('@supabase/supabase-js');
 
-// Converts "The Red Lion" → "the-red-lion"
 function toSlug(name) {
   return name
     .toLowerCase()
@@ -16,9 +18,7 @@ function toSlug(name) {
 }
 
 exports.handler = async (event) => {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-  // Service role key bypasses RLS — safe here because this only runs server-side
+  const stripe   = new Stripe(process.env.STRIPE_SECRET_KEY);
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -38,21 +38,19 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: `Webhook Error: ${err.message}` };
   }
 
+  // ── 1. NEW SIGNUP ───────────────────────────────────────────────────────────
   if (stripeEvent.type === 'checkout.session.completed') {
     const session = stripeEvent.data.object;
 
-    // Pull values from the Stripe custom fields
     const pubName = session.custom_fields
       ?.find(f => f.key === 'pub_name')?.text?.value?.trim() || 'New Pub';
     const passkey = session.custom_fields
       ?.find(f => f.key === 'passkey')?.text?.value?.trim() || 'pool';
     const email   = session.customer_details?.email || '';
 
-    // Build a unique slug e.g. "the-red-lion-4821"
     const slug   = `${toSlug(pubName)}-${Math.floor(1000 + Math.random() * 9000)}`;
     const pubUrl = `https://whosonnext.uk/pubs/${slug}`;
 
-    // Insert the new pub into Supabase
     const { error: dbError } = await supabase.from('pubs').insert({
       slug,
       name:               pubName,
@@ -69,7 +67,6 @@ exports.handler = async (event) => {
 
     console.log(`✓ Created pub: ${pubName} → ${pubUrl}`);
 
-    // Send welcome email via Resend (resend.com, free tier is plenty)
     const emailRes = await fetch('https://api.resend.com/emails', {
       method:  'POST',
       headers: {
@@ -90,7 +87,7 @@ exports.handler = async (event) => {
                 ${pubUrl}
               </a>
             </p>
-            <p>Stick this link on a QR code and put it on the table. Players scan it to join the queue.</p>
+            <p>Stick this on a QR code and put it on the pool table. Players scan it to join the queue.</p>
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
             <p><strong>Admin passkey:</strong>
               <code style="background:#f4f4f4;padding:2px 8px;border-radius:4px;">${passkey}</code>
@@ -104,9 +101,34 @@ exports.handler = async (event) => {
     });
 
     if (!emailRes.ok) {
-      // Pub is created — don't fail the webhook just because email had a hiccup
       console.warn('Welcome email failed:', await emailRes.text());
     }
+  }
+
+  // ── 2. TRIAL → PAID ─────────────────────────────────────────────────────────
+  // Fires when the first real charge succeeds after the trial ends
+  if (stripeEvent.type === 'invoice.payment_succeeded') {
+    const invoice = stripeEvent.data.object;
+    if (
+      invoice.billing_reason === 'subscription_cycle' ||
+      invoice.billing_reason === 'subscription_update'
+    ) {
+      await supabase.from('pubs')
+        .update({ plan: 'active' })
+        .eq('stripe_customer_id', invoice.customer);
+      console.log(`✓ Plan → active for customer ${invoice.customer}`);
+    }
+  }
+
+  // ── 3. SUBSCRIPTION ENDED ───────────────────────────────────────────────────
+  // Fires when the billing period lapses after cancellation — not immediately on cancel.
+  // This preserves access until the end of the period the pub already paid for.
+  if (stripeEvent.type === 'customer.subscription.deleted') {
+    const sub = stripeEvent.data.object;
+    await supabase.from('pubs')
+      .update({ plan: 'inactive' })
+      .eq('stripe_customer_id', sub.customer);
+    console.log(`✓ Plan → inactive for customer ${sub.customer}`);
   }
 
   return { statusCode: 200, body: 'ok' };
