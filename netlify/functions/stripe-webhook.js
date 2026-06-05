@@ -1,13 +1,7 @@
-// netlify/functions/stripe-webhook.js
-// Handles three Stripe events:
-//   checkout.session.completed  > create pub row + send welcome email
-//   invoice.payment_succeeded   > mark plan as active (trial > paid)
-//   customer.subscription.deleted > mark plan as inactive (access revoked)
-//
-// Register all three in your Stripe webhook dashboard.
 
-const Stripe           = require('stripe');
-const { createClient } = require('@supabase/supabase-js');
+// netlify/functions/stripe-webhook.js
+
+const Stripe = require('stripe');
 
 function toSlug(name) {
   return name
@@ -18,13 +12,9 @@ function toSlug(name) {
 }
 
 exports.handler = async (event) => {
-  const stripe   = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-  // Verify the request actually came from Stripe
+  // Verify the request came from Stripe
   const sig = event.headers['stripe-signature'];
   let stripeEvent;
   try {
@@ -34,11 +24,11 @@ exports.handler = async (event) => {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error('Webhook signature failed:', err.message);
+    console.error('Signature failed:', err.message);
     return { statusCode: 400, body: `Webhook Error: ${err.message}` };
   }
 
-  // ── 1. NEW SIGNUP ───────────────────────────────────────────────────────────
+  // ── 1. NEW SIGNUP ─────────────────────────────────────────────────────────
   if (stripeEvent.type === 'checkout.session.completed') {
     const session = stripeEvent.data.object;
 
@@ -47,26 +37,40 @@ exports.handler = async (event) => {
     const passkey = session.custom_fields
       ?.find(f => f.key === 'passkey')?.text?.value?.trim() || 'pool';
     const email   = session.customer_details?.email || '';
+    const slug    = `${toSlug(pubName)}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const pubUrl  = `https://whosonnext.uk/pubs/${slug}`;
 
-    const slug   = `${toSlug(pubName)}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const pubUrl = `https://whosonnext.uk/pubs/${slug}`;
+    // Raw fetch to Supabase REST API — no JS client needed
+    const insertRes = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/pubs`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey':        process.env.SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          'Content-Type':  'application/json',
+          'Prefer':        'return=minimal',
+        },
+        body: JSON.stringify({
+          slug,
+          name:               pubName,
+          passkey,
+          email,
+          stripe_customer_id: session.customer,
+          plan:               'trial',
+        }),
+      }
+    );
 
-    const { error: dbError } = await supabase.from('pubs').insert({
-      slug,
-      name:               pubName,
-      passkey,
-      email,
-      stripe_customer_id: session.customer,
-      plan:               'trial',
-    });
-
-    if (dbError) {
-      console.error('Supabase insert failed:', dbError);
+    if (!insertRes.ok) {
+      const errText = await insertRes.text();
+      console.error('Supabase insert failed:', insertRes.status, errText);
       return { statusCode: 500, body: 'Database error' };
     }
 
-    console.log(`✓ Created pub: ${pubName} → ${pubUrl}`);
+    console.log(`Created pub: ${pubName} -> ${pubUrl}`);
 
+    // Send welcome email via Resend
     const emailRes = await fetch('https://api.resend.com/emails', {
       method:  'POST',
       headers: {
@@ -105,30 +109,36 @@ exports.handler = async (event) => {
     }
   }
 
-  // ── 2. TRIAL → PAID ─────────────────────────────────────────────────────────
-  // Fires when the first real charge succeeds after the trial ends
+  // ── 2. TRIAL → PAID ───────────────────────────────────────────────────────
   if (stripeEvent.type === 'invoice.payment_succeeded') {
     const invoice = stripeEvent.data.object;
-    if (
-      invoice.billing_reason === 'subscription_cycle' ||
-      invoice.billing_reason === 'subscription_update'
-    ) {
-      await supabase.from('pubs')
-        .update({ plan: 'active' })
-        .eq('stripe_customer_id', invoice.customer);
-      console.log(`✓ Plan → active for customer ${invoice.customer}`);
+    if (invoice.billing_reason === 'subscription_cycle' || invoice.billing_reason === 'subscription_update') {
+      await fetch(`${process.env.SUPABASE_URL}/rest/v1/pubs?stripe_customer_id=eq.${invoice.customer}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey':        process.env.SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify({ plan: 'active' }),
+      });
+      console.log(`Plan -> active for ${invoice.customer}`);
     }
   }
 
-  // ── 3. SUBSCRIPTION ENDED ───────────────────────────────────────────────────
-  // Fires when the billing period lapses after cancellation — not immediately on cancel.
-  // This preserves access until the end of the period the pub already paid for.
+  // ── 3. SUBSCRIPTION ENDED ─────────────────────────────────────────────────
   if (stripeEvent.type === 'customer.subscription.deleted') {
     const sub = stripeEvent.data.object;
-    await supabase.from('pubs')
-      .update({ plan: 'inactive' })
-      .eq('stripe_customer_id', sub.customer);
-    console.log(`✓ Plan → inactive for customer ${sub.customer}`);
+    await fetch(`${process.env.SUPABASE_URL}/rest/v1/pubs?stripe_customer_id=eq.${sub.customer}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey':        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type':  'application/json',
+      },
+      body: JSON.stringify({ plan: 'inactive' }),
+    });
+    console.log(`Plan -> inactive for ${sub.customer}`);
   }
 
   return { statusCode: 200, body: 'ok' };
