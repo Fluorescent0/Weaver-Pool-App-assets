@@ -1,4 +1,3 @@
-
 // netlify/functions/stripe-webhook.js
 
 const Stripe = require('stripe');
@@ -9,6 +8,11 @@ function toSlug(name) {
     .replace(/[^a-z0-9\s-]/g, '')
     .trim()
     .replace(/\s+/g, '-');
+}
+
+// Helper to generate QR code URL
+function getQrCodeUrl(url) {
+  return `https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=300&margin=1&format=png`;
 }
 
 exports.handler = async (event) => {
@@ -39,6 +43,7 @@ exports.handler = async (event) => {
     const email   = session.customer_details?.email || '';
     const slug    = `${toSlug(pubName)}-${Math.floor(1000 + Math.random() * 9000)}`;
     const pubUrl  = `https://whosonnext.uk/pubs/${slug}`;
+    const qrUrl   = getQrCodeUrl(pubUrl);
 
     // Raw fetch to Supabase REST API — no JS client needed
     const insertRes = await fetch(
@@ -84,14 +89,14 @@ exports.handler = async (event) => {
         html: `
           <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a;">
             <h2 style="color:#D4A441;">You're on the board, ${pubName}!</h2>
-            <p>Your WhosOnNext page is live:</p>
-            <p style="margin:24px 0;">
-              <a href="${pubUrl}" style="background:#D4A441;color:#0D0800;font-weight:700;
-                padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">
-                ${pubUrl}
-              </a>
-            </p>
-            <p>Stick this on a QR code and put it on the pool table. Players scan it to join the queue.</p>
+            
+            <div style="border: 2px solid #D4A441; padding: 20px; border-radius: 12px; text-align: center; margin: 24px 0;">
+              <p style="margin-top: 0;"><strong>Scan to manage the queue:</strong></p>
+              <img src="${qrUrl}" alt="QR Code for ${pubName}" style="width: 200px; height: 200px; display: block; margin: 0 auto;">
+              <p style="margin-bottom: 0;">Or visit: <a href="${pubUrl}">${pubUrl.replace('https://', '')}</a></p>
+            </div>
+
+            <p>Stick this QR code on your pool table. Players scan it to join the queue.</p>
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
             <p><strong>Admin passkey:</strong>
               <code style="background:#f4f4f4;padding:2px 8px;border-radius:4px;">${passkey}</code>
